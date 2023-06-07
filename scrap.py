@@ -8,12 +8,12 @@ from bs4 import BeautifulSoup as Soup
 URL = "https://work.mma.go.kr"
 
 
-async def crawl_list() -> list[httpx.Response]:
+def crawl_list() -> list[httpx.Response]:
     urls = {
         f"/caisBYIS/search/cygonggogeomsaek.do?pageIndex={i}" for i in range(100)
     }
-    async with httpx.AsyncClient(verify=False) as client:
-        return await tqdm_asyncio.gather(*[client.get(URL+u) for u in urls])
+    with httpx.Client(verify=False) as client:
+        return [client.get(URL+u) for u in tqdm(urls)]
 
 
 def parse_list(response: httpx.Response) -> list[str]:
@@ -23,9 +23,9 @@ def parse_list(response: httpx.Response) -> list[str]:
     return [t.find("a")["href"] for t in titles]
 
 
-async def crawl_post(hrefs: list[str]):
-    async with httpx.AsyncClient(verify=False) as client:
-        return await tqdm_asyncio.gather(*[client.get(URL+h) for h in hrefs])
+def crawl_posts(hrefs: list[str]):
+    with httpx.Client(verify=False) as client:
+        return [client.get(URL+h) for h in tqdm(hrefs)]
 
 
 def parse_post(response: httpx.Response):
@@ -33,13 +33,13 @@ def parse_post(response: httpx.Response):
     return parsed.find("div", id="content").text
 
 
-async def run():
-    lists = await crawl_list()
-    hrefs = itertools.chain(*[parse_list(l) for l in lists])
-    return tqdm([parse_post(p) for p in await crawl_post(hrefs)])
+def run():
+    lists = crawl_list()
+    hrefs = list(itertools.chain(*[parse_list(l) for l in tqdm(lists)]))
+    return [parse_post(p) for p in tqdm(crawl_posts(hrefs))]
 
 
 if __name__ == "__main__":
-    result = asyncio.run(run())
+    result = run()
     with open("result.txt", "w") as f:
         f.write("\n".join(result))
