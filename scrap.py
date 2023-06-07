@@ -1,6 +1,8 @@
+import json
+from datetime import date
 from tqdm.asyncio import tqdm_asyncio
 from tqdm import tqdm
-import asyncio
+import pydantic
 import itertools
 import httpx
 from bs4 import BeautifulSoup as Soup
@@ -30,7 +32,16 @@ def crawl_posts(hrefs: list[str]):
 
 def parse_post(response: httpx.Response):
     parsed = Soup(response.read(), "html.parser")
-    return parsed.find("div", id="content").text
+    result = dict()
+    for div in parsed.find_all("div", class_="step1"):
+        table = dict()
+        for tr in div.find_all("tr"):
+            th = tr.find_all("th")
+            td = tr.find_all("td")
+            for head, data in zip(th, td):
+                table[head.text.strip()] = data.text.strip()
+        result[div.find("h3").text] = table
+    return result
 
 
 def run():
@@ -41,5 +52,5 @@ def run():
 
 if __name__ == "__main__":
     result = run()
-    with open("result.txt", "w") as f:
-        f.write("\n".join(result))
+    with open("result.txt", "w", encoding="UTF-8") as f:
+        f.write(json.dumps(result, ensure_ascii=False))
