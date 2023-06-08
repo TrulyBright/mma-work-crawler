@@ -39,11 +39,12 @@ def parse_post(response: httpx.Response):
     result = dict()
     for div in parsed.find_all("div", class_="step1"):
         table = dict()
-        for tr in div.find_all("tr"):
+        for i, tr in enumerate(div.find_all("tr")):
             th = tr.find_all("th")
             td = tr.find_all("td")
             if th == []:
-                table = td[0].text.strip()
+                if i == 0:
+                    table = td[0].text.strip()
                 break
             for head, data in zip(th, td):
                 table[head.text.strip()] = data.text.strip()
