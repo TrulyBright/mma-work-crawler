@@ -15,7 +15,9 @@ def crawl_list() -> list[httpx.Response]:
         f"/caisBYIS/search/cygonggogeomsaek.do?pageIndex={i}" for i in range(100)
     }
     with httpx.Client(verify=False) as client:
-        return [client.get(URL+u) for u in tqdm(urls)]
+        urls = tqdm(urls)
+        urls.set_description("Crawling lists")
+        return [client.get(URL+u) for u in urls]
 
 
 def parse_list(response: httpx.Response) -> list[str]:
@@ -27,7 +29,9 @@ def parse_list(response: httpx.Response) -> list[str]:
 
 def crawl_posts(hrefs: list[str]):
     with httpx.Client(verify=False) as client:
-        return [client.get(URL+h) for h in tqdm(hrefs)]
+        posts = tqdm(hrefs)
+        posts.set_description("Crawling posts")
+        return [client.get(URL+h) for h in posts]
 
 
 def parse_post(response: httpx.Response):
@@ -38,6 +42,9 @@ def parse_post(response: httpx.Response):
         for tr in div.find_all("tr"):
             th = tr.find_all("th")
             td = tr.find_all("td")
+            if th == []:
+                table = td[0].text.strip()
+                break
             for head, data in zip(th, td):
                 table[head.text.strip()] = data.text.strip()
         result[div.find("h3").text] = table
@@ -45,12 +52,15 @@ def parse_post(response: httpx.Response):
 
 
 def run():
-    lists = crawl_list()
-    hrefs = list(itertools.chain(*[parse_list(l) for l in tqdm(lists)]))
-    return [parse_post(p) for p in tqdm(crawl_posts(hrefs))]
+    lists = tqdm(crawl_list())
+    lists.set_description("Parsing lists")
+    hrefs = list(itertools.chain(*[parse_list(l) for l in lists]))
+    posts = tqdm(crawl_posts(hrefs))
+    posts.set_description("Parsing posts")
+    return [parse_post(p) for p in posts]
 
 
 if __name__ == "__main__":
     result = run()
-    with open("result.txt", "w", encoding="UTF-8") as f:
+    with open("result.json", "w", encoding="UTF-8") as f:
         f.write(json.dumps(result, ensure_ascii=False))
