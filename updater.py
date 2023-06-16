@@ -1,8 +1,6 @@
 import itertools
 from contextlib import suppress
 import re
-from tqdm import tqdm
-from tqdm.asyncio import tqdm_asyncio
 import asyncio
 import itertools
 import httpx
@@ -23,7 +21,7 @@ async def crawl_list() -> list[httpx.Response]:
         f"/caisBYIS/search/cygonggogeomsaek.do?pageIndex={i}" for i in range(pages)
     }
     async with httpx.AsyncClient(verify=False, timeout=None) as client:
-        return await tqdm_asyncio.gather(*[client.get(URL+u) for u in urls])
+        return await asyncio.gather(*[client.get(URL+u) for u in urls])
 
 
 def parse_list(response: httpx.Response) -> list[str]:
@@ -35,7 +33,7 @@ def parse_list(response: httpx.Response) -> list[str]:
 
 async def crawl_posts(hrefs: list[str]):
     async with httpx.AsyncClient(verify=False, timeout=None) as client:
-        return await tqdm_asyncio.gather(*[client.get(URL+h) for h in hrefs])
+        return await asyncio.gather(*[client.get(URL+h) for h in hrefs])
 
 
 def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
@@ -67,7 +65,7 @@ async def run():
         with suppress(httpx.RemoteProtocolError):
             posts = await crawl_posts(hrefs)
             break
-    return [parse_post(p) for p in tqdm(posts)]
+    return [parse_post(p) for p in posts]
 
 
 if __name__ == "__main__":
