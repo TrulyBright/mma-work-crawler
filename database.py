@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, scoped_session
-from model import Base
+from schema import Base
 
 
-engine = create_engine("sqlite:///database.db", echo=True)
+engine = create_engine("sqlite:///database.db",
+                       connect_args={"check_same_thread": False})
 Base.metadata.create_all(engine)
 
 

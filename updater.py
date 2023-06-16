@@ -7,7 +7,7 @@ import asyncio
 import itertools
 import httpx
 import database
-import model
+import schema
 from bs4 import BeautifulSoup as Soup
 
 URL = "https://work.mma.go.kr"
@@ -85,5 +85,5 @@ if __name__ == "__main__":
         json.dump(posts, f, ensure_ascii=False, indent=4)
     with database.get_session() as session:
         session.add_all(
-            [model.병역지정업체정보(**(post | {"id": i})) for i, post in enumerate(posts)])
+            [schema.병역지정업체정보(**(post | {"id": i})) for i, post in enumerate(posts)])
         session.commit()
