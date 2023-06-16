@@ -1,6 +1,8 @@
 import itertools
 from contextlib import suppress
 import re
+import json
+import logging
 import asyncio
 import itertools
 import httpx
@@ -11,8 +13,8 @@ from bs4 import BeautifulSoup as Soup
 URL = "https://work.mma.go.kr"
 
 
-def to_underbar(s: str):
-    return re.sub("[^가-힇]", "_", s)
+def hangul_only(s: str):
+    return re.sub("[^가-힇]", "", s)
 
 
 async def crawl_list() -> list[httpx.Response]:
@@ -40,43 +42,48 @@ def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
     parsed = Soup(response.read(), "html.parser")
     result = dict()
     for div in parsed.find_all("div", class_="step1"):
-        table = dict()
-        div_title = to_underbar(div.find("h3").text.strip())
+        div_title = hangul_only(div.find("h3").text.strip())
         for i, tr in enumerate(div.find_all("tr")):
             th = tr.find_all("th")
             td = tr.find_all("td")
             if th == []:
                 if i == 0:
-                    table = {div_title: td[0].text.strip()}
+                    result[hangul_only(div_title)] = td[0].text.strip()
                 break
             for head, data in zip(th, td):
-                table[to_underbar(head.text.strip())] = data.text.strip()
-        result[div_title] = table
+                head = hangul_only(head.text)
+                data = data.text.strip()
+                if head == "전화번호" and head in result:
+                    head = "담당자전화번호"
+                result[head] = data
     return result
 
 
 async def run():
+    logging.info("Crawling lists")
     while True:
-        with suppress(httpx.RemoteProtocolError):
+        try:
             lists = await crawl_list()
             break
+        except httpx.RemoteProtocolError:
+            logging.warning("Crawling list failed. Retrying..")
     hrefs = list(itertools.chain(*[parse_list(l) for l in lists]))
+    logging.info("Crawling posts")
     while True:
-        with suppress(httpx.RemoteProtocolError):
+        try:
             posts = await crawl_posts(hrefs)
             break
+        except httpx.RemoteProtocolError:
+            logging.warning("Crawling posts failed. Retrying..")
+    logging.info("Parsing posts")
     return [parse_post(p) for p in posts]
 
 
 if __name__ == "__main__":
     posts = asyncio.run(run())
+    with open("posts.json", "w") as f:
+        json.dump(posts, f, ensure_ascii=False, indent=4)
     with database.get_session() as session:
-        added = []
-        for i, post in enumerate(posts):
-            for table_name, table_columns in post.items():
-                table_name = to_underbar(table_name)
-                schema = model.Base.pool()[table_name]
-                table_columns["id"] = i
-                added.append(schema(**table_columns))
-        session.add_all(added)
+        session.add_all(
+            [model.병역지정업체정보(**(post | {"id": i})) for i, post in enumerate(posts)])
         session.commit()
