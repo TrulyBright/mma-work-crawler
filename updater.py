@@ -1,7 +1,9 @@
+import itertools
 import json
-from datetime import date
-from tqdm.asyncio import tqdm_asyncio
 from tqdm import tqdm
+from tqdm.asyncio import tqdm_asyncio
+from datetime import date
+import asyncio
 import pydantic
 import itertools
 import httpx
@@ -10,14 +12,13 @@ from bs4 import BeautifulSoup as Soup
 URL = "https://work.mma.go.kr"
 
 
-def crawl_list() -> list[httpx.Response]:
+async def crawl_list() -> list[httpx.Response]:
+    pages = 100
     urls = {
-        f"/caisBYIS/search/cygonggogeomsaek.do?pageIndex={i}" for i in range(100)
+        f"/caisBYIS/search/cygonggogeomsaek.do?pageIndex={i}" for i in range(pages)
     }
-    with httpx.Client(verify=False) as client:
-        urls = tqdm(urls)
-        urls.set_description("Crawling lists")
-        return [client.get(URL+u) for u in urls]
+    async with httpx.AsyncClient(verify=False, timeout=None) as client:
+        return await tqdm_asyncio.gather(*[client.get(URL+u) for u in urls])
 
 
 def parse_list(response: httpx.Response) -> list[str]:
@@ -27,11 +28,9 @@ def parse_list(response: httpx.Response) -> list[str]:
     return [t.find("a")["href"] for t in titles]
 
 
-def crawl_posts(hrefs: list[str]):
-    with httpx.Client(verify=False) as client:
-        posts = tqdm(hrefs)
-        posts.set_description("Crawling posts")
-        return [client.get(URL+h) for h in posts]
+async def crawl_posts(hrefs: list[str]):
+    async with httpx.AsyncClient(verify=False, timeout=None) as client:
+        return await tqdm_asyncio.gather(*[client.get(URL+h) for h in hrefs])
 
 
 def parse_post(response: httpx.Response):
@@ -52,16 +51,14 @@ def parse_post(response: httpx.Response):
     return result
 
 
-def run():
-    lists = tqdm(crawl_list())
-    lists.set_description("Parsing lists")
+async def run():
+    lists = await crawl_list()
     hrefs = list(itertools.chain(*[parse_list(l) for l in lists]))
-    posts = tqdm(crawl_posts(hrefs))
-    posts.set_description("Parsing posts")
-    return [parse_post(p) for p in posts]
+    posts = await crawl_posts(hrefs)
+    return [parse_post(p) for p in tqdm(posts)]
 
 
 if __name__ == "__main__":
-    result = run()
+    result = asyncio.run(run())
     with open("result.json", "w", encoding="UTF-8") as f:
         f.write(json.dumps(result, ensure_ascii=False))
