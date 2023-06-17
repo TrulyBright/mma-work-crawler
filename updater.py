@@ -61,28 +61,32 @@ def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
 
 async def run():
     logging.info("Crawling lists")
-    while True:
+    for _ in range(100):
         try:
             lists = await crawl_list()
             break
         except httpx.RemoteProtocolError:
             logging.warning("Crawling list failed. Retrying..")
+    else:
+        raise RuntimeError("Crawling list failed 100 times.")
     hrefs = list(itertools.chain(*[parse_list(l) for l in lists]))
     logging.info("Crawling posts")
-    while True:
+    for _ in range(100):
         try:
             posts = await crawl_posts(hrefs)
             break
         except httpx.RemoteProtocolError:
             logging.warning("Crawling posts failed. Retrying..")
+    else:
+        raise RuntimeError("Crawling posts failed 100 times.")
     logging.info("Parsing posts")
     return [parse_post(p) for p in posts]
 
 
 if __name__ == "__main__":
     posts = asyncio.run(run())
-    with open("posts.json", "w") as f:
-        json.dump(posts, f, ensure_ascii=False, indent=4)
+    schema.Base.metadata.drop_all(database.engine)
+    schema.Base.metadata.create_all(database.engine)
     with database.get_session() as session:
         session.add_all(
             [schema.병역지정업체정보(**(post | {"id": i})) for i, post in enumerate(posts)])
