@@ -11,14 +11,18 @@ export default {
     data() {
         return {
             jobs: Array<Job>(),
-            queried: new Job()
+            queried: new Job(),
+            lastUpdate: new Date(),
         }
     },
     async mounted() {
-        await this.fetch()
+        await Promise.all([
+            this.fetchJobs(),
+            this.fetchLastUpdate(),
+        ])
     },
     methods: {
-        async fetch() {
+        async fetchJobs() {
             const response = await fetch(API_URL)
             const parsed: [Object] = await response.json()
             parsed.forEach((obj: Object) => {
@@ -46,6 +50,11 @@ export default {
                 }
             })
             return pool
+        },
+        async fetchLastUpdate() {
+            const response = await fetch(API_URL + "/last-update")
+            const parsed: number = await response.json()
+            this.lastUpdate = new Date(parsed * 1000)
         }
     },
 }
@@ -70,6 +79,17 @@ export default {
         <li v-if="job.visible">{{ job }}</li>
         </template>
     </ul>
+    <div id="last-update">
+        최근 갱신: {{ lastUpdate.toLocaleDateString("ko-KR", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            weekday: "long",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric"
+        }) }}
+    </div>
 </template>
 <style>
 #app {
