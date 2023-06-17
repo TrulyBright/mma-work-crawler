@@ -1,7 +1,4 @@
-import sys
-import inspect
-from functools import cache
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import String, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -49,3 +46,8 @@ class 병역지정업체정보(Base):
     담당자전화번호: Mapped[str] = mapped_column(String(32))
     팩스번호: Mapped[str] = mapped_column(String(32))
     비고: Mapped[str] = mapped_column(String(32))
+
+
+class LastUpdate(Base):
+    __tablename__ = "last_update"
+    last_update: Mapped[int] = mapped_column(Integer(), primary_key=True)

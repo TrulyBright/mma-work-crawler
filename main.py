@@ -1,10 +1,7 @@
-import asyncio
-import updater
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import get_db
-import uvicorn
 import schema
 
 app = FastAPI()
@@ -25,3 +22,8 @@ app.add_middleware(
 @app.get("/")
 async def get_job_list(db: Session = Depends(get_db)):
     return db.query(schema.병역지정업체정보).all()
+
+
+@app.get("/last-update")
+async def get_last_update(db: Session = Depends(get_db)):
+    return db.query(schema.LastUpdate).first()

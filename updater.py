@@ -1,7 +1,6 @@
 import itertools
-from contextlib import suppress
 import re
-import json
+import time
 import logging
 import asyncio
 import itertools
@@ -90,4 +89,5 @@ if __name__ == "__main__":
     with database.get_session() as session:
         session.add_all(
             [schema.병역지정업체정보(**(post | {"id": i})) for i, post in enumerate(posts)])
+        session.add(schema.LastUpdate(last_update=int(time.time())))
         session.commit()
