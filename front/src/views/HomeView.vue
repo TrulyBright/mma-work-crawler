@@ -40,7 +40,10 @@ export default {
         optionPool(optionName: string) {
             const pool = new Set<string | number | boolean>()
             this.jobs.forEach((job) => {
-                pool.add(job[optionName as keyof typeof job])
+                const value = job[optionName as keyof typeof job]
+                if (value) {
+                    pool.add(value)
+                }
             })
             return pool
         }
