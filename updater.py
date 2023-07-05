@@ -5,6 +5,7 @@ import logging
 import asyncio
 import itertools
 import httpx
+import time
 from bs4 import BeautifulSoup as Soup
 
 URL = "https://work.mma.go.kr"
@@ -74,5 +75,7 @@ async def run():
 
 if __name__ == "__main__":
     posts = asyncio.run(run())
-    with open("front/data.json", "w", encoding="utf-8") as f:
-        json.dump(posts, f, ensure_ascii=False)
+    with open("front/data.json", "w", encoding="utf-8") as data_json:
+        json.dump(posts, data_json, ensure_ascii=False)
+    with open("front/time.json", "w", encoding="utf-8") as time_json:
+        json.dump({"time": int(time.time())}, time_json)

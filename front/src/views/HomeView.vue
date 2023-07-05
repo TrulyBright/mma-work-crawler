@@ -3,6 +3,7 @@ import MainTitle from "@/components/MainTitle.vue"
 </script>
 <script lang="ts">
 import mmaData from "../../data.json"
+import timeData from "../../time.json"
 export default {
     name: "HomeView",
     components: {
@@ -12,7 +13,7 @@ export default {
         return {
             jobs: mmaData,
             queried: new Object(),
-            lastUpdate: new Date(),
+            lastUpdate: new Date(timeData.time * 1000),
             keysForSelectTag: [
                 "업종",
                 "요원형태",
