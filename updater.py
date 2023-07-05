@@ -1,12 +1,10 @@
 import itertools
+import json
 import re
-import time
 import logging
 import asyncio
 import itertools
 import httpx
-import database
-import schema
 from bs4 import BeautifulSoup as Soup
 
 URL = "https://work.mma.go.kr"
@@ -15,6 +13,12 @@ URL = "https://work.mma.go.kr"
 def hangul_only(s: str):
     return re.sub("[^가-힇]", "", s)
 
+async def __get(client: httpx.AsyncClient, url: str):
+    while True:
+        try:
+            return await client.get(url)
+        except httpx.RemoteProtocolError:
+            logging.warning(f"Crawling {url} failed. Retrying...")
 
 async def crawl_list() -> list[httpx.Response]:
     pages = 200
@@ -22,7 +26,7 @@ async def crawl_list() -> list[httpx.Response]:
         f"/caisBYIS/search/cygonggogeomsaek.do?pageIndex={i}" for i in range(pages)
     }
     async with httpx.AsyncClient(verify=False, timeout=None) as client:
-        return await asyncio.gather(*[client.get(URL+u) for u in urls])
+        return await asyncio.gather(*[__get(client, URL+u) for u in urls])
 
 
 def parse_list(response: httpx.Response) -> list[str]:
@@ -34,7 +38,7 @@ def parse_list(response: httpx.Response) -> list[str]:
 
 async def crawl_posts(hrefs: list[str]):
     async with httpx.AsyncClient(verify=False, timeout=None) as client:
-        return await asyncio.gather(*[client.get(URL+h) for h in hrefs])
+        return await asyncio.gather(*[__get(client, URL+h) for h in hrefs])
 
 
 def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
@@ -60,34 +64,15 @@ def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
 
 async def run():
     logging.info("Crawling lists")
-    for _ in range(100):
-        try:
-            lists = await crawl_list()
-            break
-        except httpx.RemoteProtocolError:
-            logging.warning("Crawling list failed. Retrying..")
-    else:
-        raise RuntimeError("Crawling list failed 100 times.")
+    lists = await crawl_list()
     hrefs = list(itertools.chain(*[parse_list(l) for l in lists]))
     logging.info("Crawling posts")
-    for _ in range(100):
-        try:
-            posts = await crawl_posts(hrefs)
-            break
-        except httpx.RemoteProtocolError:
-            logging.warning("Crawling posts failed. Retrying..")
-    else:
-        raise RuntimeError("Crawling posts failed 100 times.")
+    posts = await crawl_posts(hrefs)
     logging.info("Parsing posts")
     return [parse_post(p) for p in posts]
 
 
 if __name__ == "__main__":
     posts = asyncio.run(run())
-    schema.Base.metadata.drop_all(database.engine)
-    schema.Base.metadata.create_all(database.engine)
-    with database.get_session() as session:
-        session.add_all(
-            [schema.병역지정업체정보(**(post | {"id": i})) for i, post in enumerate(posts)])
-        session.add(schema.LastUpdate(last_update=int(time.time())))
-        session.commit()
+    with open("data.json", "w", encoding="utf-8") as f:
+        json.dump(posts, f, ensure_ascii=False)
