@@ -1,14 +1,17 @@
-name: update mma data
+name: Update mma data
 on:
   schedule:
-  - cron: 50 * * * *
+  - cron: 0 * * * *
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: update data.json
+      - name: Install Python dependencies
+        uses: py-actions/py-dependency-install@v4
+        with:
+          path: "requirements.txt"
+      - name: Update data.json
         run: |
-          pip install -r requirements.txt
           python updater.py
           git add -A
           git commit -m "update data.json"
