@@ -28,9 +28,11 @@ export default {
         this.jobs.forEach((job: any) => {
             job.visible = true
         })
+        this.keysForSelectTag.forEach((key) => this.queried[key] = "");
     },
     methods: {
-        async search() {
+        search() {
+            console.log(this.queried)
             this.jobs.forEach((job: any) => {
                 job.visible = true
                 this.keysForSelectTag.forEach((key) => {
@@ -43,7 +45,7 @@ export default {
         optionPool(optionName: string) {
             const pool = new Set<string | number | boolean>()
             this.jobs.forEach((job: any) => {
-                const value = job[optionName as keyof typeof job]
+                const value = job[optionName]
                 if (value) {
                     pool.add(value)
                 }
@@ -58,7 +60,7 @@ export default {
     <div id="filter-panel">
         <template v-for="entry in keysForSelectTag" :key="entry">
             <label :for="entry">{{ entry }}</label>
-            <select name="key" v-model="queried" @change="search">
+            <select name="key" v-model="queried[entry]" @change="search">
                 <option value="" selected>전체</option>
                 <option
                 v-for="option in optionPool(entry)"
