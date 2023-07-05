@@ -1,0 +1,12 @@
+name: update mma data
+on:
+  schedule:
+  - cron: 0 * * * *
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: install dependencies
+        run: pip install -r requirements.txt
+      - name: update data.json
+        run: python updater.py
