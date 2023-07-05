@@ -2,7 +2,7 @@
 import MainTitle from "@/components/MainTitle.vue"
 </script>
 <script lang="ts">
-import {API_URL, Job} from "@/shared"
+import mmaData from "../../data.json"
 export default {
     name: "HomeView",
     components: {
@@ -10,51 +10,45 @@ export default {
     },
     data() {
         return {
-            jobs: Array<Job>(),
-            queried: new Job(),
+            jobs: mmaData,
+            queried: new Object(),
             lastUpdate: new Date(),
+            keysForSelectTag: [
+                "업종",
+                "요원형태",
+                "고용형태",
+                "자격요원",
+                "최종학력",
+                "전공계열",
+                "전직자채용가능",
+            ]
         }
     },
-    async mounted() {
-        await Promise.all([
-            this.fetchJobs(),
-            this.fetchLastUpdate(),
-        ])
+    mounted() {
+        this.jobs.forEach((job: any) => {
+            job.visible = true
+        })
     },
     methods: {
-        async fetchJobs() {
-            const response = await fetch(API_URL)
-            const parsed: [Object] = await response.json()
-            parsed.forEach((obj: Object) => {
-                const job = new Job()
-                Object.assign(job, obj)
-                this.jobs.push(job)
-            })
-        },
         async search() {
-            this.jobs.forEach((job) => {
+            this.jobs.forEach((job: any) => {
                 job.visible = true
-                Job.keys_for_select_tag().forEach((key) => {
-                    const queried_value = this.queried[key as keyof Job]
-                    const job_value = job[key as keyof Job]
+                this.keysForSelectTag.forEach((key) => {
+                    const queried_value = this.queried[key]
+                    const job_value = job[key]
                     job.visible &&= (!queried_value || queried_value === job_value)
                 })
             })
         },
         optionPool(optionName: string) {
             const pool = new Set<string | number | boolean>()
-            this.jobs.forEach((job) => {
+            this.jobs.forEach((job: any) => {
                 const value = job[optionName as keyof typeof job]
                 if (value) {
                     pool.add(value)
                 }
             })
             return pool
-        },
-        async fetchLastUpdate() {
-            const response = await fetch(API_URL + "/last-update")
-            const parsed: number = await response.json()
-            this.lastUpdate = new Date(parsed * 1000)
         }
     },
 }
@@ -62,9 +56,9 @@ export default {
 <template>
     <MainTitle></MainTitle>
     <div id="filter-panel">
-        <template v-for="entry in Job.keys_for_select_tag()" :key="entry">
+        <template v-for="entry in keysForSelectTag" :key="entry">
             <label :for="entry">{{ entry }}</label>
-            <select name="key" v-model="queried[entry as keyof typeof queried]" @change="search">
+            <select name="key" v-model="queried" @change="search">
                 <option value="" selected>전체</option>
                 <option
                 v-for="option in optionPool(entry)"
@@ -75,8 +69,8 @@ export default {
         </template>
     </div>
     <ul id="result">
-        <template v-for="job in jobs" :key="job.id">
-        <li v-if="job.visible">{{ job }}</li>
+        <template v-for="job in jobs" :key="job">
+            <li v-if="job.visible">{{ job }}</li>
         </template>
     </ul>
     <div id="last-update">

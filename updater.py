@@ -74,5 +74,5 @@ async def run():
 
 if __name__ == "__main__":
     posts = asyncio.run(run())
-    with open("data.json", "w", encoding="utf-8") as f:
+    with open("front/data.json", "w", encoding="utf-8") as f:
         json.dump(posts, f, ensure_ascii=False)
