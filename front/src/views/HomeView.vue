@@ -28,6 +28,7 @@ export default {
         this.jobs.forEach((job: any) => {
             job.visible = true
         })
+        // @ts-ignore
         this.keysForSelectTag.forEach((key) => this.queried[key] = "");
     },
     methods: {
@@ -36,6 +37,7 @@ export default {
             this.jobs.forEach((job: any) => {
                 job.visible = true
                 this.keysForSelectTag.forEach((key) => {
+                    // @ts-ignore
                     const queried_value = this.queried[key]
                     const job_value = job[key]
                     job.visible &&= (!queried_value || queried_value === job_value)
@@ -60,6 +62,7 @@ export default {
     <div id="filter-panel">
         <template v-for="entry in keysForSelectTag" :key="entry">
             <label :for="entry">{{ entry }}</label>
+            <!-- @vue-ignore -->
             <select name="key" v-model="queried[entry]" @change="search">
                 <option value="" selected>전체</option>
                 <option
@@ -72,6 +75,7 @@ export default {
     </div>
     <ul id="result">
         <template v-for="job in jobs" :key="job">
+            <!-- @vue-ignore -->
             <li v-if="job.visible">{{ job }}</li>
         </template>
     </ul>
