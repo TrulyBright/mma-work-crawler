@@ -1,7 +1,7 @@
 name: Update mma data
 on:
   schedule:
-  - cron: 35 * * * *
+  - cron: 0 0 * * *
 jobs:
   update:
     runs-on: ubuntu-latest
