@@ -1,4 +1,5 @@
 import itertools
+import traceback
 from tqdm.asyncio import tqdm_asyncio
 from tqdm import tqdm
 import json
@@ -22,6 +23,7 @@ async def __get(client: httpx.AsyncClient, url: str):
             return await client.get(url)
         except:
             logging.warning(f"Crawling {url} failed. Retrying...")
+            traceback.print_exc()
 
 async def crawl_list(start, end) -> list[httpx.Response]:
     pages = 200
