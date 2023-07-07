@@ -1,4 +1,6 @@
 import itertools
+from tqdm.asyncio import tqdm_asyncio
+from tqdm import tqdm
 import json
 import re
 import logging
@@ -18,20 +20,20 @@ async def __get(client: httpx.AsyncClient, url: str):
     while True:
         try:
             return await client.get(url)
-        except httpx.RemoteProtocolError:
+        except:
             logging.warning(f"Crawling {url} failed. Retrying...")
 
-async def crawl_list() -> list[httpx.Response]:
+async def crawl_list(start, end) -> list[httpx.Response]:
     pages = 200
     urls = {
-        f"/caisBYIS/search/cygonggogeomsaek.do?pageIndex={i}" for i in range(pages)
+        f"/caisBYIS/search/cygonggogeomsaek.do?pageIndex={i}" for i in range(start, end)
     }
     async with httpx.AsyncClient(verify=False, timeout=None) as client:
-        return await asyncio.gather(*[__get(client, URL+u) for u in urls])
+        return await tqdm_asyncio.gather(*[__get(client, URL+u) for u in urls])
 
 
 def parse_list(response: httpx.Response) -> list[str]:
-    parsed = Soup(response.read(), "lxml")
+    parsed = Soup(response.read(), "html.parser")
     class_ = "title t-alignLt pl10px"
     titles = parsed.find_all("td", class_=class_)
     return [t.find("a")["href"] for t in titles]
@@ -39,11 +41,11 @@ def parse_list(response: httpx.Response) -> list[str]:
 
 async def crawl_posts(hrefs: list[str]):
     async with httpx.AsyncClient(verify=False, timeout=None) as client:
-        return await asyncio.gather(*[__get(client, URL+h) for h in hrefs])
+        return await tqdm_asyncio.gather(*[__get(client, URL+h) for h in hrefs])
 
 
 def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
-    parsed = Soup(response.read(), "lxml")
+    parsed = Soup(response.read(), "html.parser")
     result = dict()
     for div in parsed.find_all("div", class_="step1"):
         div_title = hangul_only(div.find("h3").text.strip())
@@ -51,8 +53,8 @@ def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
             th = tr.find_all("th")
             td = tr.find_all("td")
             if th == []:
-                if i == 0:
-                    result[hangul_only(div_title)] = td[0].get_text(separator=b"\n")
+                if i == 0:  # 비고
+                    result[hangul_only(div_title)] = td[0].get_text(separator="\n", strip=True)
                 break
             for head, data in zip(th, td):
                 head = hangul_only(head.text)
@@ -65,12 +67,12 @@ def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
 
 async def run():
     logging.info("Crawling lists")
-    lists = await crawl_list()
+    lists = await crawl_list(0, 200)
     hrefs = list(itertools.chain(*[parse_list(l) for l in lists]))
     logging.info("Crawling posts")
     posts = await crawl_posts(hrefs)
     logging.info("Parsing posts")
-    return [parse_post(p) for p in posts]
+    return [parse_post(p) for p in tqdm(posts)]
 
 
 if __name__ == "__main__":
