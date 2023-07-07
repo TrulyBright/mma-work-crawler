@@ -31,7 +31,7 @@ async def crawl_list() -> list[httpx.Response]:
 
 
 def parse_list(response: httpx.Response) -> list[str]:
-    parsed = Soup(response.read(), "html.parser")
+    parsed = Soup(response.read(), "lxml")
     class_ = "title t-alignLt pl10px"
     titles = parsed.find_all("td", class_=class_)
     return [t.find("a")["href"] for t in titles]
@@ -43,7 +43,7 @@ async def crawl_posts(hrefs: list[str]):
 
 
 def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
-    parsed = Soup(response.read(), "html.parser")
+    parsed = Soup(response.read(), "lxml")
     result = dict()
     for div in parsed.find_all("div", class_="step1"):
         div_title = hangul_only(div.find("h3").text.strip())
@@ -52,7 +52,7 @@ def parse_post(response: httpx.Response) -> dict[str, dict[str, str]]:
             td = tr.find_all("td")
             if th == []:
                 if i == 0:
-                    result[hangul_only(div_title)] = td[0].text.strip()
+                    result[hangul_only(div_title)] = td[0].get_text(separator=b"\n")
                 break
             for head, data in zip(th, td):
                 head = hangul_only(head.text)
