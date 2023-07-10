@@ -80,7 +80,7 @@ export default {
                 <select class="form-select" name="key" v-model="queried[entry]" @change="search">
                     <option value="" selected>전체</option>
                     <option
-                    v-for="option in optionPool(entry)"
+                    v-for="option in Array.from(optionPool(entry)).sort()"
                     :value="option"
                     :key="String(option)"
                     >{{ option }}</option>
