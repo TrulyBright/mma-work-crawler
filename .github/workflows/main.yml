@@ -17,6 +17,7 @@ jobs:
           git add -A
           git commit -m "update data.json"
           git push
-      - uses: ./.github/workflows/azure-static-web-apps-white-river-005a91700.yml
-        with:
-          push: true
+  deploy:
+    uses: TrulyBright/mma-work-crawler/.github/workflows/azure-static-web-apps-white-river-005a91700.yml
+    with:
+      push: true
