@@ -5,3 +5,11 @@ import HomeView from "@/views/HomeView.vue";
 <template>
   <HomeView></HomeView>
 </template>
+<style>
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+</style>
