@@ -29,37 +29,42 @@ export default {
     },
     mounted() {
         this.jobs.forEach((job: any) => {
+            job.filteredBy = new Set<string>()
             job.visible = true
         })
         // @ts-ignore
-        this.keysForSelectTag.forEach((key) => this.queried[key] = "");
+        this.keysForSelectTag.forEach((key) => this.queried[key] = "")
         // @ts-ignore
-        this.queried["업체명"] = "";
+        this.queried.업체명 = ""
     },
     methods: {
-        search() {
-            console.log(this.queried)
+        search(key: string) {
             this.jobs.forEach((job: any) => {
-                job.visible = true
-                this.keysForSelectTag.forEach((key) => {
+                if (key === "업체명") {
+                    // @ts-ignore
+                    if (!this.queried.업체명 || job.업체명.includes(this.queried.업체명))
+                        job.filteredBy.delete(key)
+                    else job.filteredBy.add(key)
+                } else {
                     // @ts-ignore
                     const queried_value = this.queried[key]
                     const job_value = job[key]
-                    job.visible &&= (
+                    if (
                         !queried_value ||
                         queried_value === job_value ||
                         // @ts-ignore
                         (key === "지역" && job.주소.includes(this.queried[key]))
-                    )
-                })
-                // @ts-ignore
-                job.visible &&= !this.queried.업체명 || job.업체명.includes(this.queried.업체명)
+                    ) job.filteredBy.delete(key)
+                    else job.filteredBy.add(key)
+                }
+                job.visible = job.filteredBy.size === 0
             })
         },
         searchName(e: Event) {
             // @ts-ignore
             this.queried.업체명 = e.target!.value
-            this.search()
+            // @ts-ignore
+            this.search("업체명")
         },
         optionPool(optionName: string) {
             const pool = new Set<string | number | boolean>()
@@ -86,7 +91,7 @@ export default {
             <div>
                 <label :for="entry">{{ entry }}</label>
                 <!-- @vue-ignore -->
-                <select class="form-select" name="key" v-model="queried[entry]" @change="search">
+                <select class="form-select" name="key" v-model="queried[entry]" @change="search(entry)">
                     <option value="" selected>전체</option>
                     <option
                     v-for="option in Array.from(optionPool(entry)).sort()"
@@ -101,7 +106,6 @@ export default {
     <input type="text" class="form-control w-50 my-1" placeholder="삼성전자" @input="searchName">
     <div id="list" class="grid gap-3">
         <template v-for="job in jobs" :key="job">
-            <!-- @vue-ignore -->
             <JobItem v-if="job.visible" :job="job"></JobItem>
         </template>
     </div>
