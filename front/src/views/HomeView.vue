@@ -33,6 +33,8 @@ export default {
         })
         // @ts-ignore
         this.keysForSelectTag.forEach((key) => this.queried[key] = "");
+        // @ts-ignore
+        this.queried["업체명"] = "";
     },
     methods: {
         search() {
@@ -50,7 +52,14 @@ export default {
                         (key === "지역" && job.주소.includes(this.queried[key]))
                     )
                 })
+                // @ts-ignore
+                job.visible &&= !this.queried.업체명 || job.업체명.includes(this.queried.업체명)
             })
+        },
+        searchName(e: Event) {
+            // @ts-ignore
+            this.queried.업체명 = e.target!.value
+            this.search()
         },
         optionPool(optionName: string) {
             const pool = new Set<string | number | boolean>()
@@ -88,7 +97,8 @@ export default {
             </div>
         </template>
     </div>
-    <input type="text" class="form-control w-50 my-1" placeholder="삼성전자">
+    <!-- @vue-ignore -->
+    <input type="text" class="form-control w-50 my-1" placeholder="삼성전자" @input="searchName">
     <div id="list" class="grid gap-3">
         <template v-for="job in jobs" :key="job">
             <!-- @vue-ignore -->
