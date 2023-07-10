@@ -69,15 +69,7 @@ export default {
         optionPool(optionName: string) {
             const pool = new Set<string | number | boolean>()
             this.jobs.forEach((job: any) => {
-                if (optionName === "지역") {
-                    const value = job.주소;
-                    pool.add(value.split(" ", 1)[0])
-                } else {
-                    const value = job[optionName]
-                    if (value) {
-                        pool.add(value)
-                    }
-                }
+                pool.add(optionName === "지역" ? job.주소.split(" ", 1)[0] : job[optionName])
             })
             return pool
         }
