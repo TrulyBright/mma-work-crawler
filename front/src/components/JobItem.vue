@@ -11,7 +11,7 @@ export default {
             this.$el.classList.remove("shadow")
         },
         showDetail() {
-
+            this.$el.querySelector(".detail").classList.toggle("d-none");
         }
     }
 }
@@ -29,15 +29,19 @@ export default {
             <div class="card-text">
                 <p>{{ job.주소 }}</p>
                 <p>{{ job.급여조건 }}</p>
+                <div class="detail d-none">
+                    <p v-for="paragraph in job.비고.split('\n')">
+                        {{ paragraph }}
+                    </p>
+                </div>
             </div>
-        </div>
-        <div class="detail">
         </div>
     </div>
 </template>
 <style scoped>
 .card {
     cursor: pointer;
+    transition: all 1s;
 }
 .card-header {
     display: flex;
