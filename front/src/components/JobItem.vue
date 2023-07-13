@@ -34,12 +34,14 @@ export default {
                 <p>{{ job.급여조건 }}</p>
                 <p>{{ job.모집인원 }} 모집</p>
                 <div class="detail d-none">
-                    <div v-for="[entry, value] of Object.entries(job)" :key="entry">
-                        <template v-if="typeof value === 'string' &&
-                        !['업종', '고용형태', '업체명', '주소', '급여조건', '모집인원'].includes(entry)">
-                            <label class="fw-bold">{{ entry }}</label>
-                            <p v-for="p in value.split('\n')">{{ p }}</p>
-                        </template>
+                    <div
+                        v-for="[entry, value] of Object.entries(job)
+                            .filter(([entry, value]) => typeof value==='string'
+                                && !['업종', '고용형태', '업체명', '주소', '급여조건', '모집인원'].includes(entry))"
+                        :key="entry"
+                        :class="entry === '비고' ? 'description' : ''">
+                        <label class="fw-bold">{{ entry }}</label>
+                        <p v-for="p in value.split('\n')">{{ p }}</p>
                     </div>
                 </div>
             </div>
@@ -57,5 +59,12 @@ export default {
 }
 .jobplanet-link {
     height: 15px;
+}
+.detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+.description {
+    grid-column: 1 / 3;
 }
 </style>
