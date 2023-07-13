@@ -121,7 +121,7 @@ export default {
     </div>
     <!-- @vue-ignore -->
     <input type="text" class="form-control w-50 my-1" placeholder="삼성전자" @input="searchName">
-    <div id="list" class="grid gap-3">
+    <div id="list" class="grid gap-3 m-3">
         <template v-for="job in jobs" :key="job">
             <!-- @vue-ignore -->
             <JobItem v-if="job.visible" :job="job"></JobItem>
