@@ -18,13 +18,13 @@ export default {
             lastUpdate: new Date(timeData.time * 1000),
             keysForSelectTag: [
                 "업종",
+                "지역",
                 "요원형태",
                 "고용형태",
                 "교대근무",
                 "특근잔업",
                 "전직자채용가능",
                 "현역배정인원",
-                "지역",
             ]
         }
     },
