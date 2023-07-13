@@ -17,8 +17,7 @@ jobs:
           git add -A
           git commit -m "update data.json"
           git push
-  build_and_deploy:
-    uses: ./.github/workflows/azure-static-web-apps-white-river-005a91700.yml
-    with:
-      push: true
-    secrets: inherit
+      - uses: ./.github/workflows/azure-static-web-apps-white-river-005a91700.yml
+        with:
+          push: true
+          secrets: inherit
