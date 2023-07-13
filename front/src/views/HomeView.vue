@@ -18,43 +18,44 @@ export default {
             lastUpdate: new Date(timeData.time * 1000),
             keysForSelectTag: [
                 "업종",
-                "지역",
                 "요원형태",
                 "고용형태",
                 "교대근무",
                 "특근잔업",
                 "전직자채용가능",
                 "현역배정인원",
-            ]
+            ],
+            regionPool: new Object()
         }
     },
     mounted() {
         this.jobs = this.jobs.filter(job=>job.업체명) // 마감된 공고는 제외함.
         this.jobs.forEach((job: any) => {
-            job.filteredBy = new Set<string>()
+            job.filteredOutBy = new Set<string>()
             job.visible = true
         })
         // @ts-ignore
         this.keysForSelectTag.forEach((key) => this.queried[key] = "")
         // @ts-ignore
         this.queried.업체명 = ""
+        // @ts-ignore
+        this.queried["시/도"] = ""
+        // @ts-ignore
+        this.queried["시군구"] = ""
+        this.updateRegionPool()
     },
     methods: {
         updateVisible(job: any) {
-            job.visible = job.filteredBy.size === 0
+            job.visible = job.filteredOutBy.size === 0
         },
         searchByFilter(key: string) {
             this.jobs.forEach((job: any) => {
                 // @ts-ignore
                 const queried_value = this.queried[key]
                 const job_value = job[key]
-                if (
-                    !queried_value ||
-                    queried_value === job_value ||
-                    // @ts-ignore
-                    (key === "지역" && job.주소.includes(this.queried[key]))
-                ) job.filteredBy.delete(key)
-                else job.filteredBy.add(key)
+                if (!queried_value || queried_value === job_value)
+                    job.filteredOutBy.delete(key)
+                else job.filteredOutBy.add(key)
                 this.updateVisible(job)
             })
         },
@@ -64,38 +65,39 @@ export default {
             const searcher = new Hangul.Searcher(input)
             this.jobs.forEach((job: any) => {
                 const index = searcher.search(job.업체명)
-                job.filteredBy.delete("업체명")
-                if (index === -1) job.filteredBy.add("업체명")
+                job.filteredOutBy.delete("업체명")
+                if (index === -1) job.filteredOutBy.add("업체명")
+                this.updateVisible(job)
+            })
+        },
+        searchByRegion() {
+            if (this.queried["시/도"] === "")
+                this.queried["시군구"] = ""
+            this.jobs.forEach((job: any) => {
+                // @ts-ignore
+                if (job["주소"].includes(this.queried["시/도"]) && job["주소"].includes(this.queried["시군구"]))
+                    job.filteredOutBy.delete("주소")
+                else job.filteredOutBy.add("주소")
                 this.updateVisible(job)
             })
         },
         optionPool(optionName: string) {
-            if (optionName === "지역") {
-                return [
-                    "서울특별시",
-                    "부산광역시",
-                    "대구광역시",
-                    "인천광역시",
-                    "광주광역시",
-                    "대전광역시",
-                    "울산광역시",
-                    "세종특별자치시",
-                    "경기도",
-                    "강원특별자치도",
-                    "충청북도",
-                    "충청남도",
-                    "전라북도",
-                    "전라남도",
-                    "경상북도",
-                    "경상남도",
-                    "제주특별자치도",
-                ]
-            }
             const pool = new Set<string | number | boolean>()
             this.jobs.forEach((job: any) => {
                 pool.add(job[optionName])
             })
             return pool
+        },
+        updateRegionPool() {
+            this.jobs.forEach((job: any) => {
+                const region = job["주소"].split(" ", 2)
+                // @ts-ignore
+                if (!this.regionPool[region[0]])
+                    // @ts-ignore
+                    this.regionPool[region[0]] = new Set<string>()
+                // @ts-ignore
+                this.regionPool[region[0]].add(region[1])
+            })
         }
     },
 }
@@ -108,7 +110,7 @@ export default {
             <div>
                 <label :for="entry">{{ entry }}</label>
                 <!-- @vue-ignore -->
-                <select class="form-select" name="key" v-model="queried[entry]" @change="searchByFilter(entry)">
+                <select class="form-select" :name="entry" v-model="queried[entry]" @change="searchByFilter(entry)">
                     <option value="" selected>전체</option>
                     <option
                     v-for="option in optionPool(entry)"
@@ -118,6 +120,23 @@ export default {
                 </select>
             </div>
         </template>
+        <div>
+            <label for="시/도">시/도</label>
+            <!-- @vue-ignore -->
+            <select class="form-select" name="시/도" v-model="queried['시/도']" @change="searchByRegion">
+                <option value="" selected>전체</option>
+                <option v-for="sido in Object.keys(regionPool).sort()" :key="String(sido)">{{ sido }}</option>
+            </select>
+        </div>
+        <div>
+            <label for="시군구">시군구</label>
+            <!-- @vue-ignore -->
+            <select class="form-select" name="시군구" v-model="queried['시군구']" @change="searchByRegion">
+                <option value="" selected>전체</option>
+                <!-- @vue-ignore -->
+                <option v-for="r in regionPool[queried['시/도']]" :value="r" :key="String(r)">{{ r }}</option>
+            </select>
+        </div>
     </div>
     <!-- @vue-ignore -->
     <input type="text" class="form-control w-50 my-1" placeholder="삼성전자" @input="searchName">
@@ -142,32 +161,23 @@ export default {
 <style>
 #filter-panel {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
 }
 #list {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
 }
 @media (min-width: 280px) {
-    #filter-panel {
-        grid-template-columns: 1fr 1fr;
-    }
     #list {
         grid-template-columns: 1fr;
     }
 }
 @media (min-width: 480px) {
-    #filter-panel {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
     #list {
         grid-template-columns: 1fr 1fr;
     }
 }
 @media (min-width: 768px) {
-    #filter-panel {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
     #list {
         grid-template-columns: 1fr 1fr 1fr;
     }
@@ -175,11 +185,6 @@ export default {
 @media (min-width: 1024px) {
     #list {
         grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
-}
-@media (min-width: 1280px) {
-    #list {
-        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     }
 }
 </style>
