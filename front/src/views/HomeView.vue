@@ -5,6 +5,7 @@ import JobItem from "@/components/JobItem.vue"
 <script lang="ts">
 import mmaData from "../../data.json"
 import timeData from "../../time.json"
+import * as Hangul from "hangul-js"
 export default {
     name: "HomeView",
     components: {
@@ -38,37 +39,34 @@ export default {
         this.queried.업체명 = ""
     },
     methods: {
+        updateVisible(job: any) {
+            job.visible = job.filteredBy.size === 0
+        },
         search(key: string) {
             this.jobs.forEach((job: any) => {
-                if (key === "업체명") {
+                // @ts-ignore
+                const queried_value = this.queried[key]
+                const job_value = job[key]
+                if (
+                    !queried_value ||
+                    queried_value === job_value ||
                     // @ts-ignore
-                    if (!this.queried.업체명 || job.업체명.includes(this.queried.업체명))
-                        job.filteredBy.delete(key)
-                    else job.filteredBy.add(key)
-                } else {
-                    // @ts-ignore
-                    const queried_value = this.queried[key]
-                    const job_value = job[key]
-                    if (
-                        !queried_value ||
-                        queried_value === job_value ||
-                        // @ts-ignore
-                        (key === "지역" && job.주소.includes(this.queried[key]))
-                    ) job.filteredBy.delete(key)
-                    else job.filteredBy.add(key)
-                }
-                job.visible = job.filteredBy.size === 0
+                    (key === "지역" && job.주소.includes(this.queried[key]))
+                ) job.filteredBy.delete(key)
+                else job.filteredBy.add(key)
+                this.updateVisible(job)
             })
         },
         searchName(e: Event) {
             // @ts-ignore
             const input: string = e.target!.value
-            if (input === "" || input.search(/^[가-힇]+$/) !== -1) {
-                // @ts-ignore
-                this.queried.업체명 = input
-                // @ts-ignore
-                this.search("업체명")
-            }
+            const searcher = new Hangul.Searcher(input)
+            this.jobs.forEach((job: any) => {
+                const index = searcher.search(job.업체명)
+                job.filteredBy.delete("업체명")
+                if (index === -1) job.filteredBy.add("업체명")
+                this.updateVisible(job)
+            })
         },
         optionPool(optionName: string) {
             if (optionName === "지역") {
