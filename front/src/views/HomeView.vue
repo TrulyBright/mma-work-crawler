@@ -29,6 +29,7 @@ export default {
         }
     },
     mounted() {
+        this.jobs = this.jobs.filter(job=>job.업체명) // 마감된 공고는 제외함.
         this.jobs.forEach((job: any) => {
             job.filteredBy = new Set<string>()
             job.visible = true
@@ -42,7 +43,7 @@ export default {
         updateVisible(job: any) {
             job.visible = job.filteredBy.size === 0
         },
-        search(key: string) {
+        searchByFilter(key: string) {
             this.jobs.forEach((job: any) => {
                 // @ts-ignore
                 const queried_value = this.queried[key]
@@ -107,7 +108,7 @@ export default {
             <div>
                 <label :for="entry">{{ entry }}</label>
                 <!-- @vue-ignore -->
-                <select class="form-select" name="key" v-model="queried[entry]" @change="search(entry)">
+                <select class="form-select" name="key" v-model="queried[entry]" @change="searchByFilter(entry)">
                     <option value="" selected>전체</option>
                     <option
                     v-for="option in optionPool(entry)"
