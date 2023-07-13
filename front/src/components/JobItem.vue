@@ -23,16 +23,21 @@ export default {
             <div>{{ job.고용형태 }}</div>
         </div>
         <div class="card-body">
-            <div class="card-title">
+            <div class="card-title fw-bold">
                 {{ job.업체명 }}
             </div>
             <div class="card-text">
                 <p>{{ job.주소 }}</p>
                 <p>{{ job.급여조건 }}</p>
+                <p>{{ job.모집인원 }} 모집</p>
                 <div class="detail d-none">
-                    <p v-for="paragraph in job.비고.split('\n')">
-                        {{ paragraph }}
-                    </p>
+                    <div v-for="[entry, value] of Object.entries(job)" :key="entry">
+                        <template v-if="typeof value === 'string' &&
+                        !['업종', '고용형태', '업체명', '주소', '급여조건', '모집인원'].includes(entry)">
+                            <label class="fw-bold">{{ entry }}</label>
+                            <p v-for="p in value.split('\n')">{{ p }}</p>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
