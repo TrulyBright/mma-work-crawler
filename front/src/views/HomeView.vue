@@ -62,9 +62,13 @@ export default {
         },
         searchName(e: Event) {
             // @ts-ignore
-            this.queried.업체명 = e.target!.value
-            // @ts-ignore
-            this.search("업체명")
+            const input: string = e.target!.value
+            if (input === "" || input.search(/^[가-힇]+$/) !== -1) {
+                // @ts-ignore
+                this.queried.업체명 = input
+                // @ts-ignore
+                this.search("업체명")
+            }
         },
         optionPool(optionName: string) {
             if (optionName === "지역") {
