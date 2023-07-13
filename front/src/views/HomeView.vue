@@ -103,6 +103,7 @@ export default {
 </script>
 <template>
     <MainTitle></MainTitle>
+    <div>현재 공고가 총 {{ jobs.length }}개 있습니다.</div>
     <div id="filter-panel" class="p-1">
         <template v-for="entry in keysForSelectTag" :key="entry">
             <div>
