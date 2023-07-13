@@ -13,6 +13,7 @@ jobs:
         with:
           path: requirements.txt
       - run: |
+          git pull
           python updater.py
           git config --global user.email "trulybright@yonsei.ac.kr"
           git config --global user.name "TrulyBright"
