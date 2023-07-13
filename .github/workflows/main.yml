@@ -1,7 +1,7 @@
 name: Update mma data
 on:
   schedule:
-    - cron: 56 * * * *
+    - cron: 7 * * * *
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -20,7 +20,7 @@ jobs:
           git add -A
           git commit -m "update data.json"
           git push
-      - uses: ./.github/workflows/azure-static-web-apps-white-river-005a91700.yml
+      - uses: ./.github/workflows/action.yml
         with:
           push: true
           secrets: inherit
