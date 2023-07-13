@@ -25,6 +25,9 @@ export default {
         <div class="card-body">
             <div class="card-title fw-bold">
                 {{ job.업체명 }}
+                <a :href="'https://www.jobplanet.co.kr/search?query='+job.업체명">
+                    <img src="https://jpassets.jobplanet.co.kr/production/uploads/material/media/8456/jp_wordmark_green.svg" class="jobplanet-link"/>
+                </a>
             </div>
             <div class="card-text">
                 <p>{{ job.주소 }}</p>
@@ -51,5 +54,8 @@ export default {
 .card-header {
     display: flex;
     justify-content: space-between;
+}
+.jobplanet-link {
+    height: 15px;
 }
 </style>
