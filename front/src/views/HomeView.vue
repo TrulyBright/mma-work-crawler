@@ -71,7 +71,9 @@ export default {
             })
         },
         searchByRegion() {
+            // @ts-ignore
             if (this.queried["시/도"] === "")
+                // @ts-ignore
                 this.queried["시군구"] = ""
             this.jobs.forEach((job: any) => {
                 // @ts-ignore
