@@ -67,9 +67,30 @@ export default {
             this.search("업체명")
         },
         optionPool(optionName: string) {
+            if (optionName === "지역") {
+                return [
+                    "서울특별시",
+                    "부산광역시",
+                    "대구광역시",
+                    "인천광역시",
+                    "광주광역시",
+                    "대전광역시",
+                    "울산광역시",
+                    "세종특별자치시",
+                    "경기도",
+                    "강원특별자치도",
+                    "충청북도",
+                    "충청남도",
+                    "전라북도",
+                    "전라남도",
+                    "경상북도",
+                    "경상남도",
+                    "제주특별자치도",
+                ]
+            }
             const pool = new Set<string | number | boolean>()
             this.jobs.forEach((job: any) => {
-                pool.add(optionName === "지역" ? job.주소.split(" ", 1)[0] : job[optionName])
+                pool.add(job[optionName])
             })
             return pool
         }
@@ -78,7 +99,7 @@ export default {
 </script>
 <template>
     <MainTitle></MainTitle>
-    <div id="filter-panel">
+    <div id="filter-panel" class="p-1">
         <template v-for="entry in keysForSelectTag" :key="entry">
             <div>
                 <label :for="entry">{{ entry }}</label>
@@ -86,7 +107,7 @@ export default {
                 <select class="form-select" name="key" v-model="queried[entry]" @change="search(entry)">
                     <option value="" selected>전체</option>
                     <option
-                    v-for="option in Array.from(optionPool(entry)).sort()"
+                    v-for="option in optionPool(entry)"
                     :value="option"
                     :key="String(option)"
                     >{{ option }}</option>
@@ -145,6 +166,16 @@ export default {
     }
     #list {
         grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+@media (min-width: 1024px) {
+    #list {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+}
+@media (min-width: 1280px) {
+    #list {
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     }
 }
 </style>
