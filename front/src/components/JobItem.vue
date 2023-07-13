@@ -64,6 +64,7 @@ export default {
 .detail {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    word-break: break-all;
 }
 .description {
     grid-column: 1 / 3;
