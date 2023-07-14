@@ -38,7 +38,8 @@ export default {
         }
     },
     mounted() {
-        this.jobs = this.jobs.filter(job=>job.업체명) // 마감된 공고는 제외함.
+        // @ts-ignore
+        this.jobs = this.jobs.filter(job => job.업체명) // 마감된 공고는 제외함.
         this.jobs.forEach((job: any) => {
             job.filteredOutBy = new Set<string>()
             job.visible = true
@@ -131,7 +132,8 @@ export default {
         <div>
             <label for="업종">업종</label>
             <div>
-                <button id="fields-button" class="form-select" data-bs-toggle="dropdown" aria-expanded="false" type="button">
+                <button id="fields-button" class="form-select" data-bs-toggle="dropdown" aria-expanded="false"
+                    type="button">
                     {{ selectedFields.size === 0 ? "전체" : `${selectedFields.size}개 업종` }}
                 </button>
                 <ul class="dropdown-menu">
@@ -149,11 +151,7 @@ export default {
                 <!-- @vue-ignore -->
                 <select class="form-select" :name="entry" v-model="queried[entry]" @change="searchByFilter(entry)">
                     <option value="" selected>전체</option>
-                    <option
-                    v-for="option in optionPool(entry)"
-                    :value="option"
-                    :key="String(option)"
-                    >{{ option }}</option>
+                    <option v-for="option in optionPool(entry)" :value="option" :key="String(option)">{{ option }}</option>
                 </select>
             </div>
         </template>
@@ -196,8 +194,10 @@ export default {
     </div>
     <div id="github-icon" class="p-1">
         <a href="https://github.com/TrulyBright/mma-work-crawler" id="github-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-github" viewBox="0 0 16 16">
-                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-github"
+                viewBox="0 0 16 16">
+                <path
+                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
             </svg>
         </a>
     </div>
@@ -207,39 +207,45 @@ export default {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
 }
+
 #list {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
 }
+
 @media (min-width: 280px) {
     #list {
         grid-template-columns: 1fr;
     }
 }
+
 @media (min-width: 480px) {
     #list {
         grid-template-columns: 1fr 1fr;
     }
 }
+
 @media (min-width: 768px) {
     #list {
         grid-template-columns: 1fr 1fr 1fr;
     }
 }
+
 @media (min-width: 1024px) {
     #list {
         grid-template-columns: 1fr 1fr 1fr 1fr;
     }
 }
+
 #github-icon {
     display: flex;
     justify-content: center;
     align-items: center;
     color: black;
 }
+
 #fields-button {
     display: flex;
     flex-direction: row;
     justify-content: left;
-}
-</style>
+}</style>
