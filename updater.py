@@ -79,7 +79,8 @@ async def run():
 
 if __name__ == "__main__":
     posts = asyncio.run(run())
+    posts.sort(key=lambda x: x["급여조건"], reverse=True)
     with open("front/data.json", "w", encoding="utf-8") as data_json:
-        json.dump(posts, data_json, ensure_ascii=False)
+        json.dump(posts, data_json, ensure_ascii=False, indent=4)
     with open("front/time.json", "w", encoding="utf-8") as time_json:
         json.dump({"time": int(time.time())}, time_json)
