@@ -14,10 +14,19 @@ export default {
     data() {
         return {
             jobs: mmaData,
-            queried: new Object(),
+            queried: {
+                "시/도": "",
+                "시군구": "",
+                "업종": new Set<string>(),
+                "요원형태": "",
+                "고용형태": "",
+                "교대근무": "",
+                "특근잔업": "",
+                "전직자채용가능": "",
+                "현역배정인원": "",
+            },
             lastUpdate: new Date(timeData.time * 1000),
             keysForSelectTag: [
-                "업종",
                 "요원형태",
                 "고용형태",
                 "교대근무",
@@ -34,14 +43,6 @@ export default {
             job.filteredOutBy = new Set<string>()
             job.visible = true
         })
-        // @ts-ignore
-        this.keysForSelectTag.forEach((key) => this.queried[key] = "")
-        // @ts-ignore
-        this.queried.업체명 = ""
-        // @ts-ignore
-        this.queried["시/도"] = ""
-        // @ts-ignore
-        this.queried["시군구"] = ""
         this.updateRegionPool()
     },
     methods: {
@@ -100,14 +101,46 @@ export default {
                 // @ts-ignore
                 this.regionPool[region[0]].add(region[1])
             })
+        },
+        toggleField(field: string) {
+            this.queried["업종"].has(field) ? this.queried["업종"].delete(field) : this.queried["업종"].add(field)
+            this.searchByField()
+        },
+        searchByField() {
+            this.jobs.forEach((job) => {
+                job.filteredOutBy.delete("업종")
+                if (this.queried["업종"].size !== 0 && !this.queried["업종"].has(job["업종"]))
+                    job.filteredOutBy.add("업종")
+                this.updateVisible(job)
+            })
         }
     },
+    computed: {
+        selectedFields() {
+            return this.queried["업종"]
+        }
+    }
 }
 </script>
 <template>
     <MainTitle></MainTitle>
     <div>현재 공고가 총 {{ jobs.length }}개 있습니다.</div>
     <div id="filter-panel" class="p-1">
+        <div>
+            <label for="업종">업종</label>
+            <div>
+                <button id="fields-button" class="form-select" data-bs-toggle="dropdown" aria-expanded="false" type="button">
+                    {{ selectedFields.size === 0 ? "전체" : `${selectedFields.size}개 업종` }}
+                </button>
+                <ul class="dropdown-menu">
+                    <li v-for="field in optionPool('업종')" :key="String(field)" class="p-1">
+                        <label for="field" class="px-1">{{ field }}</label>
+                        <!-- @vue-ignore -->
+                        <input type="checkbox" @change="toggleField(field)">
+                    </li>
+                </ul>
+            </div>
+        </div>
         <template v-for="entry in keysForSelectTag" :key="entry">
             <div>
                 <label :for="entry">{{ entry }}</label>
@@ -201,5 +234,10 @@ export default {
     justify-content: center;
     align-items: center;
     color: black;
+}
+#fields-button {
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
 }
 </style>
