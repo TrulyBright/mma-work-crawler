@@ -108,8 +108,10 @@ export default {
         },
         searchByField() {
             this.jobs.forEach((job) => {
+                // @ts-ignore
                 job.filteredOutBy.delete("업종")
                 if (this.queried["업종"].size !== 0 && !this.queried["업종"].has(job["업종"]))
+                    // @ts-ignore
                     job.filteredOutBy.add("업종")
                 this.updateVisible(job)
             })
