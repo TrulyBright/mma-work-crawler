@@ -1,6 +1,11 @@
 <script lang="ts">
 export default {
-    props: ['job'],
+    props: {
+        job: {
+            type: Map<string, string>,
+            required: true
+        },
+    },
     methods: {
         emboss() {
             this.$el.classList.remove("shadow-sm")
@@ -12,12 +17,11 @@ export default {
         },
         showDetail() {
             this.$el.querySelector(".detail").classList.remove("d-none");
-            this.$el.querySelector(".detail").scrollIntoView();
             this.$el.classList.add("expanded");
         },
         hideDetail() {
             this.$el.querySelector(".detail").classList.add("d-none");
-            this.$el.querySelector(".card-text").scrollIntoView();
+            this.$el.scrollIntoView();
             this.$el.classList.remove("expanded");
         }
     }
@@ -26,23 +30,23 @@ export default {
 <template>
     <div class="card g-col-6 shadow-sm" @mouseover="emboss" @mouseout="engrave" @click="showDetail">
         <div class="card-header">
-            <div>{{ job.업종 }}</div>
-            <div>{{ job.고용형태 }}</div>
+            <div>{{ job?.get("업종") }}</div>
+            <div>{{ job?.get("고용형태") }}</div>
         </div>
         <div class="card-body">
             <div class="card-title fw-bold">
-                {{ job.업체명 }}
-                <a :href="'https://www.jobplanet.co.kr/search?query='+job.업체명">
+                {{ job.get("업체명") }}
+                <a :href="'https://www.jobplanet.co.kr/search?query='+job!.get('업체명')">
                     <img src="https://jpassets.jobplanet.co.kr/production/uploads/material/media/8456/jp_wordmark_green.svg" class="jobplanet-link"/>
                 </a>
             </div>
             <div class="card-text">
-                <p>{{ job.주소 }}</p>
-                <p>{{ job.급여조건 }}</p>
-                <p>{{ job.모집인원 }} 모집</p>
+                <p>{{ job.get("주소") }}</p>
+                <p>{{ job.get("급여조건") }}</p>
+                <p>{{ job.get("모집인원") }} 모집</p>
                 <div class="detail d-none">
                     <div
-                        v-for="[entry, value] of Object.entries(job)
+                        v-for="[entry, value] of Array.from(job.entries())
                             .filter(([entry, value]) => typeof value==='string'
                                 && !['업종', '고용형태', '업체명', '주소', '급여조건', '모집인원'].includes(entry))"
                         :key="entry"

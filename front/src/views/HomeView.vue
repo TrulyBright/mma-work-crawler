@@ -6,122 +6,138 @@ import JobItem from "@/components/JobItem.vue"
 import mmaData from "../../data.json"
 import timeData from "../../time.json"
 import * as Hangul from "hangul-js"
+
+class Job {
+    data!: Map<string, string>
+    filteredOutBy = new Set<string>()
+    constructor(data: Map<string, string>) {
+        this.data = data
+    }
+    get visible() { return this.filteredOutBy.size === 0 }
+}
+
+class Addr {
+    시도!: string
+    시군구!: string
+    constructor(시도: string, 시군구: string) {
+        this.시도 = 시도
+        this.시군구 = 시군구
+    }
+}
+
 export default {
     name: "HomeView",
     components: {
         MainTitle,
     },
     data() {
-        return {
-            jobs: mmaData,
-            queried: {
-                "시/도": "",
-                "시군구": "",
-                "업종": new Set<string>(),
-                "요원형태": "",
-                "고용형태": "",
-                "교대근무": "",
-                "특근잔업": "",
-                "전직자채용가능": "",
-                "현역배정인원": "",
-            },
+        const entries = [
+            "업종",
+            "요원형태",
+            "고용형태",
+            "교대근무",
+            "특근잔업",
+            "전직자채용가능",
+            "현역배정인원",
+        ]
+        const _data = {
+            jobs: mmaData
+                .filter((job) => job.업체명) // 업체명이 없으면 마감된 공고다.
+                .map((job) => {
+                    const _job = new Job(new Map(Object.entries(job)))
+                    _job.filteredOutBy = new Set<string>()
+                    return _job
+                }),
+            queried: new Map(
+                entries.map((entry) => [entry, new Set<string>()])
+            ),
             lastUpdate: new Date(timeData.time * 1000),
-            keysForSelectTag: [
-                "요원형태",
-                "고용형태",
-                "교대근무",
-                "특근잔업",
-                "전직자채용가능",
-                "현역배정인원",
-            ],
-            regionPool: new Object()
+            entries: entries,
+            regionPool: new Map<string, Set<string>>(),
+            optionPool: new Map<string, Set<string>>(),
         }
+        mmaData.forEach((job) => {
+            entries.forEach((entry: string) => {
+                // @ts-ignore
+                const value = job[entry]
+                if (!_data.optionPool.get(entry))
+                    _data.optionPool.set(entry, new Set<string>())
+                _data.optionPool.get(entry)!.add(value)
+            })
+        })
+        mmaData.forEach((job) => {
+            const region = job.주소.split(" ", 2)
+            if (!_data.regionPool.get(region[0]))
+                _data.regionPool.set(region[0], new Set<string>())
+            _data.regionPool.get(region[0])!.add(region[1])
+        })
+        _data.queried.set("시/도", new Set<string>())
+        _data.queried.set("시군구", new Set<string>())
+        return _data
     },
     mounted() {
-        // @ts-ignore
-        this.jobs = this.jobs.filter(job => job.업체명) // 마감된 공고는 제외함.
-        this.jobs.forEach((job: any) => {
-            job.filteredOutBy = new Set<string>()
-            job.visible = true
-        })
-        this.updateRegionPool()
+        const filterPanel = document.getElementById("filter-panel")!
+        const observer = new IntersectionObserver(
+            ([e]) => e.target.classList.toggle("sticky", e.intersectionRatio < 1),
+            { threshold: [1] }
+        )
+        observer.observe(filterPanel)
     },
     methods: {
-        updateVisible(job: any) {
-            job.visible = job.filteredOutBy.size === 0
-        },
         searchByFilter(key: string) {
-            this.jobs.forEach((job: any) => {
-                // @ts-ignore
-                const queried_value = this.queried[key]
-                const job_value = job[key]
-                if (!queried_value || queried_value === job_value)
+            this.jobs.forEach((job) => {
+                const queried_value = this.queried.get(key)!
+                const job_value = job.data.get(key)!
+                if (queried_value.size === 0 || queried_value.has(job_value))
                     job.filteredOutBy.delete(key)
                 else job.filteredOutBy.add(key)
-                this.updateVisible(job)
             })
         },
-        searchName(e: Event) {
+        searchByName(e: Event) {
             // @ts-ignore
             const input: string = e.target!.value
             const searcher = new Hangul.Searcher(input)
-            this.jobs.forEach((job: any) => {
-                const index = searcher.search(job.업체명)
+            this.jobs.forEach((job) => {
+                const index = searcher.search(job.data.get("업체명")!)
                 job.filteredOutBy.delete("업체명")
                 if (index === -1) job.filteredOutBy.add("업체명")
-                this.updateVisible(job)
             })
         },
         searchByRegion() {
-            // @ts-ignore
-            if (this.queried["시/도"] === "")
-                // @ts-ignore
-                this.queried["시군구"] = ""
-            this.jobs.forEach((job: any) => {
-                // @ts-ignore
-                if (job["주소"].includes(this.queried["시/도"]) && job["주소"].includes(this.queried["시군구"]))
-                    job.filteredOutBy.delete("주소")
-                else job.filteredOutBy.add("주소")
-                this.updateVisible(job)
+            const sidoQueried = this.queried.get("시/도")!
+            const sigunguQueried = this.queried.get("시군구")!
+            this.jobs.forEach((job) => {
+                const region = job.data.get("주소")!.split(" ", 2)
+                job.filteredOutBy.delete("시/도")
+                if (sidoQueried.size === 0 || sidoQueried.has(region[0]))
+                    job.filteredOutBy.delete("시/도")
+                else job.filteredOutBy.add("시/도")
+                job.filteredOutBy.delete("시군구")
+                if (sigunguQueried.size === 0 || sigunguQueried.has(region[1]))
+                    job.filteredOutBy.delete("시군구")
+                else job.filteredOutBy.add("시군구")
             })
         },
-        optionPool(optionName: string) {
-            const pool = new Set<string | number | boolean>()
-            this.jobs.forEach((job: any) => {
-                pool.add(job[optionName])
+        toggleOption(entry: string, value: string) {
+            const queried_values = this.queried.get(entry)!
+            if (queried_values.has(value)) queried_values.delete(value)
+            else queried_values.add(value)
+        },
+    },
+    computed: {
+        sigunguPool() {
+            const pool = Array<Addr>()
+            const sidoQueried = this.queried.get("시/도")!
+            if (sidoQueried.size === 0) return pool
+            this.regionPool.forEach((value, key) => {
+                if (sidoQueried!.has(key)) {
+                    value.forEach((sigungu) => {
+                        pool.push(new Addr(key, sigungu))
+                    })
+                }
             })
             return pool
         },
-        updateRegionPool() {
-            this.jobs.forEach((job: any) => {
-                const region = job["주소"].split(" ", 2)
-                // @ts-ignore
-                if (!this.regionPool[region[0]])
-                    // @ts-ignore
-                    this.regionPool[region[0]] = new Set<string>()
-                // @ts-ignore
-                this.regionPool[region[0]].add(region[1])
-            })
-        },
-        toggleField(field: string) {
-            this.queried["업종"].has(field) ? this.queried["업종"].delete(field) : this.queried["업종"].add(field)
-            this.searchByField()
-        },
-        searchByField() {
-            this.jobs.forEach((job) => {
-                // @ts-ignore
-                job.filteredOutBy.delete("업종")
-                if (this.queried["업종"].size !== 0 && !this.queried["업종"].has(job["업종"]))
-                    // @ts-ignore
-                    job.filteredOutBy.add("업종")
-                this.updateVisible(job)
-            })
-        }
-    },
-    computed: {
-        selectedFields() {
-            return this.queried["업종"]
-        }
     }
 }
 </script>
@@ -129,56 +145,41 @@ export default {
     <MainTitle></MainTitle>
     <div>현재 공고가 총 {{ jobs.length }}개 있습니다.</div>
     <div id="filter-panel" class="p-1">
-        <div>
-            <label for="업종">업종</label>
-            <div>
-                <button id="fields-button" class="form-select" data-bs-toggle="dropdown" aria-expanded="false"
-                    type="button">
-                    {{ selectedFields.size === 0 ? "전체" : `${selectedFields.size}개 업종` }}
-                </button>
-                <ul class="dropdown-menu">
-                    <li v-for="field in optionPool('업종')" :key="String(field)" class="p-1">
-                        <label for="field" class="px-1">{{ field }}</label>
-                        <!-- @vue-ignore -->
-                        <input type="checkbox" @change="toggleField(field)">
-                    </li>
-                </ul>
-            </div>
+        <div class="dropdown" v-for="entry in entries" :key="entry">
+            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">{{ entry }}</button>
+            <ul class="dropdown-menu">
+                <li v-for="option in optionPool.get(entry)" :key="String(option)" class="p-1">
+                    <label for="option" class="px-1">{{ option }}</label>
+                    <!-- @vue-ignore -->
+                    <input type="checkbox" @change="toggleOption(entry, option); searchByFilter(entry)">
+                </li>
+            </ul>
         </div>
-        <template v-for="entry in keysForSelectTag" :key="entry">
-            <div>
-                <label :for="entry">{{ entry }}</label>
-                <!-- @vue-ignore -->
-                <select class="form-select" :name="entry" v-model="queried[entry]" @change="searchByFilter(entry)">
-                    <option value="" selected>전체</option>
-                    <option v-for="option in optionPool(entry)" :value="option" :key="String(option)">{{ option }}</option>
-                </select>
-            </div>
-        </template>
-        <div>
-            <label for="시/도">시/도</label>
-            <!-- @vue-ignore -->
-            <select class="form-select" name="시/도" v-model="queried['시/도']" @change="searchByRegion">
-                <option value="" selected>전체</option>
-                <option v-for="sido in Object.keys(regionPool).sort()" :key="String(sido)">{{ sido }}</option>
-            </select>
+        <div class="dropdown">
+            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">시/도</button>
+            <ul class="dropdown-menu">
+                <li v-for="sido in Array.from(regionPool.keys()).sort()" :key="String(sido)" class="p-1">
+                    <label for="option" class="px-1">{{ sido }}</label>
+                    <!-- @vue-ignore -->
+                    <input type="checkbox" @change="toggleOption('시/도', sido); searchByRegion()">
+                </li>
+            </ul>
         </div>
-        <div>
-            <label for="시군구">시군구</label>
-            <!-- @vue-ignore -->
-            <select class="form-select" name="시군구" v-model="queried['시군구']" @change="searchByRegion">
-                <option value="" selected>전체</option>
-                <!-- @vue-ignore -->
-                <option v-for="r in regionPool[queried['시/도']]" :value="r" :key="String(r)">{{ r }}</option>
-            </select>
+        <div class="dropdown">
+            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">시군구</button>
+            <ul class="dropdown-menu">
+                <li v-for="addr in sigunguPool" :key="String(addr)" class="p-1">
+                    <label for="option" class="px-1">{{ addr.시도}} {{ addr.시군구 }}</label>
+                    <!-- @vue-ignore -->
+                    <input type="checkbox" @change="toggleOption('시군구', sigungu); searchByRegion()">
+                </li>
+            </ul>
         </div>
+        <input type="text" class="form-control w-25 my-1" placeholder="삼성전자" @input="searchByName">
     </div>
-    <!-- @vue-ignore -->
-    <input type="text" class="form-control w-50 my-1" placeholder="삼성전자" @input="searchName">
     <div id="list" class="grid gap-3 m-3">
         <template v-for="job in jobs" :key="job">
-            <!-- @vue-ignore -->
-            <JobItem v-if="job.visible" :job="job"></JobItem>
+            <JobItem v-if="job.visible" :job="job.data"></JobItem>
         </template>
     </div>
     <div id="last-update">
@@ -204,8 +205,26 @@ export default {
 </template>
 <style>
 #filter-panel {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    position: sticky;
+    top: -1px;
+    z-index: 999;
+    background: white;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+}
+
+#filter-panel.sticky {
+    box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-menu {
+    max-height: 20rem;
+    overflow-y: auto;
+    min-width: max-content;
 }
 
 #list {
@@ -248,4 +267,5 @@ export default {
     display: flex;
     flex-direction: row;
     justify-content: left;
-}</style>
+}
+</style>
