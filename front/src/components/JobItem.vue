@@ -11,7 +11,14 @@ export default {
             this.$el.classList.remove("shadow")
         },
         showDetail() {
-            this.$el.querySelector(".detail").classList.toggle("d-none");
+            this.$el.querySelector(".detail").classList.remove("d-none");
+            this.$el.querySelector(".detail").scrollIntoView();
+            this.$el.classList.add("expanded");
+        },
+        hideDetail() {
+            this.$el.querySelector(".detail").classList.add("d-none");
+            this.$el.querySelector(".card-text").scrollIntoView();
+            this.$el.classList.remove("expanded");
         }
     }
 }
@@ -46,13 +53,15 @@ export default {
                     </div>
                 </div>
             </div>
+            <div class="hide-detail">
+                <small @click.stop="hideDetail">접기</small>
+            </div>
         </div>
     </div>
 </template>
 <style scoped>
-.card {
+.card:not(.expanded) {
     cursor: pointer;
-    transition: all 1s;
 }
 .card-header {
     display: flex;
@@ -68,5 +77,13 @@ export default {
 }
 .description {
     grid-column: 1 / 3;
+}
+.hide-detail {
+    cursor: pointer;
+    text-align: right;
+    color: grey;
+}
+.card:not(.expanded) .hide-detail {
+    display: none;
 }
 </style>
