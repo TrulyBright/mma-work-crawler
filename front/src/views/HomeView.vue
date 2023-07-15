@@ -179,7 +179,7 @@ export default {
     </div>
     <div id="list" class="grid gap-3 m-3">
         <template v-for="job in jobs" :key="job">
-            <JobItem v-if="job.visible" :job="job.data"></JobItem>
+            <JobItem v-show="job.visible" :job="job.data"></JobItem>
         </template>
     </div>
     <div id="last-update">
