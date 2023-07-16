@@ -24,7 +24,6 @@ class Addr {
         this.시군구 = 시군구
     }
 }
-
 export default {
     name: "HomeView",
     components: {
@@ -58,8 +57,7 @@ export default {
         }
         mmaData.forEach((job) => {
             entries.forEach((entry: string) => {
-                // @ts-ignore
-                const value = job[entry]
+                const value = job[entry as keyof typeof job]
                 if (!_data.optionPool.get(entry))
                     _data.optionPool.set(entry, new Set<string>())
                 _data.optionPool.get(entry)!.add(value)
@@ -82,6 +80,17 @@ export default {
             { threshold: [1] }
         )
         observer.observe(filterPanel)
+        const params = new URLSearchParams(window.location.search)
+        for (const [key, valueArr] of params.entries()) {
+            if (this.queried.has(key)) { // A filter has that key.
+                for (const value of valueArr.split(",")) {
+                    this.toggleOption(key, value)
+                }
+                this.searchByFilter(key)
+            }
+        }
+        this.searchByName(params.get("업체명") || "")
+        this.searchByRegion()
     },
     methods: {
         searchByFilter(key: string) {
@@ -93,10 +102,8 @@ export default {
                 else job.filteredOutBy.add(key)
             })
         },
-        searchByName(e: Event) {
-            // @ts-ignore
-            const input: string = e.target!.value
-            const searcher = new Hangul.Searcher(input)
+        searchByName(name: string) {
+            const searcher = new Hangul.Searcher(name)
             this.jobs.forEach((job) => {
                 const index = searcher.search(job.data.get("업체명")!)
                 job.filteredOutBy.delete("업체명")
@@ -122,6 +129,17 @@ export default {
             const queried_values = this.queried.get(entry)!
             if (queried_values.has(value)) queried_values.delete(value)
             else queried_values.add(value)
+            this.updateParams(entry, Array.from(queried_values))
+        },
+        updateParams(key: string, values: string[]) {
+            const params = new URLSearchParams(window.location.search)
+            if (values.length === 0) params.delete(key)
+            else params.set(key, values.join(","))
+            window.history.replaceState(
+                {},
+                "",
+                `${window.location.pathname}?${params.toString()}`
+            )
         },
     },
     computed: {
@@ -150,8 +168,7 @@ export default {
             <ul class="dropdown-menu">
                 <li v-for="option in optionPool.get(entry)" :key="String(option)" class="p-1">
                     <label for="option" class="px-1">{{ option }}</label>
-                    <!-- @vue-ignore -->
-                    <input type="checkbox" @change="toggleOption(entry, option); searchByFilter(entry)">
+                    <input type="checkbox" :checked="queried.get(entry)!.has(option)" @change="toggleOption(entry, option); searchByFilter(entry)">
                 </li>
             </ul>
         </div>
@@ -160,8 +177,7 @@ export default {
             <ul class="dropdown-menu">
                 <li v-for="sido in Array.from(regionPool.keys()).sort()" :key="String(sido)" class="p-1">
                     <label for="option" class="px-1">{{ sido }}</label>
-                    <!-- @vue-ignore -->
-                    <input type="checkbox" @change="toggleOption('시/도', sido); searchByRegion()">
+                    <input type="checkbox" :checked="queried.get('시/도')!.has(sido)" @change="toggleOption('시/도', sido); searchByRegion()">
                 </li>
             </ul>
         </div>
@@ -170,12 +186,11 @@ export default {
             <ul class="dropdown-menu">
                 <li v-for="addr in sigunguPool" :key="String(addr)" class="p-1">
                     <label for="option" class="px-1">{{ addr.시도}} {{ addr.시군구 }}</label>
-                    <!-- @vue-ignore -->
-                    <input type="checkbox" @change="toggleOption('시군구', sigungu); searchByRegion()">
+                    <input type="checkbox" :checked="queried.get('시군구')!.has(addr.시군구)" @change="toggleOption('시군구', addr.시군구); searchByRegion()">
                 </li>
             </ul>
         </div>
-        <input type="text" class="form-control w-25 my-1" placeholder="삼성전자" @input="searchByName">
+        <input type="text" class="form-control w-25 my-1" placeholder="삼성전자" @input="searchByName(($event.target! as HTMLInputElement).value); updateParams('업체명', [($event.target! as HTMLInputElement).value])">
     </div>
     <div id="list" class="grid gap-3 m-3">
         <template v-for="job in jobs" :key="job">
