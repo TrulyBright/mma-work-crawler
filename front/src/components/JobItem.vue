@@ -53,7 +53,7 @@ export default {
                         :class="entry === '비고' ? 'description' : ''">
                         <label class="fw-bold">{{ entry }}</label>
                         <!-- @vue-ignore -->
-                        <p v-for="p in value.split('\n')">{{ p }}</p>
+                        <p v-for="p in value.split('\n')" :key="p">{{ p }}</p>
                     </div>
                 </div>
             </div>
