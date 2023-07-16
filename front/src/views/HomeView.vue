@@ -51,8 +51,7 @@ export default {
                 entries.map((entry) => [entry, new Set<string>()])
             ),
             lastUpdate: new Date(timeData.time * 1000),
-            entries: entries,
-            regionPool: new Map<string, Set<string>>(),
+            regionPool: new Map<string, Set<string>>(), // 시/도: {시군구}
             optionPool: new Map<string, Set<string>>(),
         }
         mmaData.forEach((job) => {
@@ -84,7 +83,7 @@ export default {
         for (const [key, valueArr] of params.entries()) {
             if (this.queried.has(key)) { // A filter has that key.
                 for (const value of valueArr.split(",")) {
-                    this.toggleOption(key, value)
+                    this.toggleOption(key, value, true)
                 }
                 this.searchByFilter(key)
             }
@@ -125,11 +124,23 @@ export default {
                 else job.filteredOutBy.add("시군구")
             })
         },
-        toggleOption(entry: string, value: string) {
+        toggleOption(entry: string, value: string, checked: boolean) {
             const queried_values = this.queried.get(entry)!
-            if (queried_values.has(value)) queried_values.delete(value)
-            else queried_values.add(value)
-            this.updateParams(entry, Array.from(queried_values))
+            if (checked) queried_values.add(value)
+            else queried_values.delete(value)
+            if (entry === "시/도") {
+                if (!checked) {
+                    const sigunguSelected = this.queried.get("시군구")!
+                    this.regionPool.get(value)!.forEach((sigungu) => {
+                        sigunguSelected.delete(sigungu) // BUG: 이름이 같은 시군구가 존재할 가능성.
+                    })
+                    this.updateParams("시군구", Array.from(sigunguSelected!))
+                }
+                this.searchByRegion()
+            } else {
+                this.searchByFilter(entry)
+            }
+            this.updateParams(entry, Array.from(this.queried.get(entry)!))
         },
         updateParams(key: string, values: string[]) {
             const params = new URLSearchParams(window.location.search)
@@ -163,12 +174,12 @@ export default {
     <MainTitle></MainTitle>
     <div>현재 공고가 총 {{ jobs.length }}개 있습니다.</div>
     <div id="filter-panel" class="p-1">
-        <div class="dropdown" v-for="entry in entries" :key="entry">
+        <div class="dropdown" v-for="entry in optionPool.keys()" :key="entry">
             <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">{{ entry }}</button>
             <ul class="dropdown-menu">
                 <li v-for="option in optionPool.get(entry)" :key="String(option)" class="p-1">
                     <label for="option" class="px-1">{{ option }}</label>
-                    <input type="checkbox" :checked="queried.get(entry)!.has(option)" @change="toggleOption(entry, option); searchByFilter(entry)">
+                    <input type="checkbox" :checked="queried.get(entry)!.has(option)" @change="toggleOption(entry, option, ($event.target! as HTMLInputElement).checked)">
                 </li>
             </ul>
         </div>
@@ -177,7 +188,7 @@ export default {
             <ul class="dropdown-menu">
                 <li v-for="sido in Array.from(regionPool.keys()).sort()" :key="String(sido)" class="p-1">
                     <label for="option" class="px-1">{{ sido }}</label>
-                    <input type="checkbox" :checked="queried.get('시/도')!.has(sido)" @change="toggleOption('시/도', sido); searchByRegion()">
+                    <input type="checkbox" :checked="queried.get('시/도')!.has(sido)" @change="toggleOption('시/도', sido, ($event.target! as HTMLInputElement).checked)">
                 </li>
             </ul>
         </div>
@@ -186,7 +197,7 @@ export default {
             <ul class="dropdown-menu">
                 <li v-for="addr in sigunguPool" :key="String(addr)" class="p-1">
                     <label for="option" class="px-1">{{ addr.시도}} {{ addr.시군구 }}</label>
-                    <input type="checkbox" :checked="queried.get('시군구')!.has(addr.시군구)" @change="toggleOption('시군구', addr.시군구); searchByRegion()">
+                    <input type="checkbox" :checked="queried.get('시군구')!.has(addr.시군구)" @change="toggleOption('시군구', addr.시군구, ($event.target! as HTMLInputElement).checked); searchByRegion()">
                 </li>
             </ul>
         </div>
