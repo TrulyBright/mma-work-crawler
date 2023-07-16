@@ -23,6 +23,13 @@ export default {
             this.$el.querySelector(".detail").classList.add("d-none");
             this.$el.scrollIntoView();
             this.$el.classList.remove("expanded");
+        },
+        toExternal(link: string) {
+            if (link.startsWith("http")) {
+                return link;
+            } else {
+                return "http://" + link;
+            }
         }
     }
 }
@@ -52,8 +59,8 @@ export default {
                         :key="entry"
                         :class="entry === '비고' ? 'description' : ''">
                         <label class="fw-bold">{{ entry }}</label>
-                        <!-- @vue-ignore -->
-                        <p v-for="p in value.split('\n')" :key="p">{{ p }}</p>
+                        <template v-if="entry === '홈페이지'"><p><a :href="toExternal(value)">{{ value }}</a></p></template>
+                        <p v-else v-for="p in value.split('\n')" :key="p">{{ p }}</p>
                     </div>
                 </div>
             </div>
