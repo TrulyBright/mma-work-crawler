@@ -88,7 +88,9 @@ export default {
                 this.searchByFilter(key)
             }
         }
-        this.searchByName(params.get("업체명") || "")
+        const keyword = params.get("검색어")
+        if (keyword)
+            this.searchByKeyword(keyword)
         this.searchByRegion()
     },
     methods: {
@@ -101,12 +103,16 @@ export default {
                 else job.filteredOutBy.add(key)
             })
         },
-        searchByName(name: string) {
+        searchByKeyword(name: string) {
             const searcher = new Hangul.Searcher(name)
             this.jobs.forEach((job) => {
-                const index = searcher.search(job.data.get("업체명")!)
-                job.filteredOutBy.delete("업체명")
-                if (index === -1) job.filteredOutBy.add("업체명")
+                job.filteredOutBy.add("검색어")
+                for (const value of job.data.values()) {
+                    if (searcher.search(value) !== -1) {
+                        job.filteredOutBy.delete("검색어")
+                        break;
+                    }
+                }
             })
         },
         searchByRegion() {
@@ -201,7 +207,7 @@ export default {
                 </li>
             </ul>
         </div>
-        <input type="text" class="form-control w-25 my-1" placeholder="삼성전자" @input="searchByName(($event.target! as HTMLInputElement).value); updateParams('업체명', [($event.target! as HTMLInputElement).value])">
+        <input type="text" class="form-control w-50 my-1" placeholder="삼성전자, 운전가능자, Unity, ..." @input="searchByKeyword(($event.target! as HTMLInputElement).value); updateParams('검색어', [($event.target! as HTMLInputElement).value])">
     </div>
     <div id="list" class="grid gap-3 m-3">
         <template v-for="job in jobs" :key="job">
