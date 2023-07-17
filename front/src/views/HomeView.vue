@@ -105,12 +105,14 @@ export default {
         },
         searchByKeyword(name: string) {
             const searcher = new Hangul.Searcher(name)
+            const entryToSearch = ["업체명", "담당업무", "비고"];
             this.jobs.forEach((job) => {
                 job.filteredOutBy.add("검색어")
-                for (const value of job.data.values()) {
+                for (const entry of entryToSearch) {
+                    const value = job.data.get(entry)!
                     if (searcher.search(value) !== -1) {
                         job.filteredOutBy.delete("검색어")
-                        break;
+                        break
                     }
                 }
             })
