@@ -13,7 +13,6 @@ class Job {
     constructor(data: Map<string, string>) {
         this.data = data
     }
-    get visible() { return this.filteredOutBy.size === 0 }
 }
 
 class Addr {
@@ -24,6 +23,13 @@ class Addr {
         this.시군구 = 시군구
     }
 }
+
+const max = (a: number, b: number) => {
+    return a > b ? a : b
+}
+
+const primeNumberCountForEachLoadMore = 11;
+
 export default {
     name: "HomeView",
     components: {
@@ -45,7 +51,8 @@ export default {
                 .map((job) => {
                     return new Job(new Map(Object.entries(job)))
                 }),
-            jobs: new Array<Job>(),
+            kept: new Array<Job>(),
+            maxKept: 11,
             queried: new Map(
                 entries.map((entry) => [entry, new Set<string>()])
             ),
@@ -91,8 +98,8 @@ export default {
         if (keyword)
             this.searchByKeyword(keyword)
         this.searchByRegion()
-        this.jobs.push(...this.jobAll.slice(0, 10));
-        document.addEventListener("scroll", this.handleScroll)
+        this.loadMore(primeNumberCountForEachLoadMore)
+        document.addEventListener("scroll", this.onScroll)
     },
     methods: {
         searchByFilter(key: string) {
@@ -161,18 +168,24 @@ export default {
                 `${window.location.pathname}?${params.toString()}`
             )
         },
+        loadMore(count: number) {
+            this.kept.push(...this.matches.slice(this.kept.length, this.kept.length + count))
+        },
         // infinite scroll.
-        handleScroll() {
+        onScroll() {
             const scrollHeight = document.documentElement.scrollHeight;
             const scrollTop = document.documentElement.scrollTop;
             const clientHeight = document.documentElement.clientHeight;
             const lastElement = document.querySelector("#list > div:last-child");
-            if (scrollTop + clientHeight >= scrollHeight - lastElement!.clientHeight) {
-                this.jobs.push(...this.jobAll.slice(this.jobs.length, this.jobs.length + 10));
+            if (scrollTop + clientHeight >= scrollHeight - lastElement!.clientHeight / 2) {
+                this.loadMore(primeNumberCountForEachLoadMore)
+                this.updateKept()
             }
-        
+        },
+        updateKept() {
+            this.kept = this.matches.slice(0, max(this.kept.length, this.maxKept))
+            this.maxKept = max(this.kept.length, this.maxKept);
         }
-                // this.jobs.push(...this.jobAll.slice(this.jobs.length, this.jobs.length + 10));
     },
     computed: {
         sigunguPool() {
@@ -188,6 +201,9 @@ export default {
             })
             return pool
         },
+        matches() {
+            return this.jobAll.filter((job) => job.filteredOutBy.size === 0)
+        }
     }
 }
 </script>
@@ -200,7 +216,7 @@ export default {
             <ul class="dropdown-menu">
                 <li v-for="option in optionPool.get(entry)" :key="String(option)" class="p-1">
                     <label for="option" class="px-1">{{ option }}</label>
-                    <input type="checkbox" :checked="queried.get(entry)!.has(option)" @change="toggleOption(entry, option, ($event.target! as HTMLInputElement).checked)">
+                    <input type="checkbox" :checked="queried.get(entry)!.has(option)" @change="toggleOption(entry, option, ($event.target! as HTMLInputElement).checked); updateKept()">
                 </li>
             </ul>
         </div>
@@ -209,7 +225,7 @@ export default {
             <ul class="dropdown-menu">
                 <li v-for="sido in Array.from(regionPool.keys()).sort()" :key="String(sido)" class="p-1">
                     <label for="option" class="px-1">{{ sido }}</label>
-                    <input type="checkbox" :checked="queried.get('시/도')!.has(sido)" @change="toggleOption('시/도', sido, ($event.target! as HTMLInputElement).checked)">
+                    <input type="checkbox" :checked="queried.get('시/도')!.has(sido)" @change="toggleOption('시/도', sido, ($event.target! as HTMLInputElement).checked); updateKept()">
                 </li>
             </ul>
         </div>
@@ -218,15 +234,15 @@ export default {
             <ul class="dropdown-menu">
                 <li v-for="addr in sigunguPool" :key="String(addr)" class="p-1">
                     <label for="option" class="px-1">{{ addr.시도}} {{ addr.시군구 }}</label>
-                    <input type="checkbox" :checked="queried.get('시군구')!.has(addr.시군구)" @change="toggleOption('시군구', addr.시군구, ($event.target! as HTMLInputElement).checked); searchByRegion()">
+                    <input type="checkbox" :checked="queried.get('시군구')!.has(addr.시군구)" @change="toggleOption('시군구', addr.시군구, ($event.target! as HTMLInputElement).checked); searchByRegion(); updateKept();">
                 </li>
             </ul>
         </div>
-        <input type="text" class="form-control w-50 my-1" placeholder="삼성전자, 운전가능자, Unity, ..." @input="searchByKeyword(($event.target! as HTMLInputElement).value); updateParams('검색어', [($event.target! as HTMLInputElement).value])">
+        <input type="text" class="form-control w-50 my-1" placeholder="삼성전자, 운전가능자, Unity, ..." @input="searchByKeyword(($event.target! as HTMLInputElement).value); updateParams('검색어', [($event.target! as HTMLInputElement).value]); updateKept();">
     </div>
     <div id="list" class="grid gap-3 m-3">
-        <template v-for="job in jobs" :key="job">
-            <JobItem v-show="job.visible" :job="job.data"></JobItem>
+        <template v-for="job in kept" :key="job">
+            <JobItem :job="job.data"></JobItem>
         </template>
     </div>
     <div id="last-update">
