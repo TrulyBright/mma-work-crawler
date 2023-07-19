@@ -3,7 +3,8 @@ import MainTitle from "@/components/MainTitle.vue"
 import JobItem from "@/components/JobItem.vue"
 </script>
 <script lang="ts">
-import mmaData from "../../data.json"
+const rawMMAData = await import("../../data.json")
+const mmaData = rawMMAData.default.filter((job) => job.업체명) // 업체명이 없으면 마감된 공고다.
 import timeData from "../../time.json"
 import * as Hangul from "hangul-js"
 
@@ -40,13 +41,11 @@ export default {
             "현역배정인원",
         ]
         const _data = {
-            jobs: mmaData
-                .filter((job) => job.업체명) // 업체명이 없으면 마감된 공고다.
+            jobAll: mmaData
                 .map((job) => {
-                    const _job = new Job(new Map(Object.entries(job)))
-                    _job.filteredOutBy = new Set<string>()
-                    return _job
+                    return new Job(new Map(Object.entries(job)))
                 }),
+            jobs: new Array<Job>(),
             queried: new Map(
                 entries.map((entry) => [entry, new Set<string>()])
             ),
@@ -92,10 +91,12 @@ export default {
         if (keyword)
             this.searchByKeyword(keyword)
         this.searchByRegion()
+        this.jobs.push(...this.jobAll.slice(0, 10));
+        document.addEventListener("scroll", this.handleScroll)
     },
     methods: {
         searchByFilter(key: string) {
-            this.jobs.forEach((job) => {
+            this.jobAll.forEach((job) => {
                 const queried_value = this.queried.get(key)!
                 const job_value = job.data.get(key)!
                 if (queried_value.size === 0 || queried_value.has(job_value))
@@ -106,7 +107,7 @@ export default {
         searchByKeyword(name: string) {
             const searcher = new Hangul.Searcher(name)
             const entryToSearch = ["업체명", "담당업무", "비고"];
-            this.jobs.forEach((job) => {
+            this.jobAll.forEach((job) => {
                 job.filteredOutBy.add("검색어")
                 for (const entry of entryToSearch) {
                     const value = job.data.get(entry)!
@@ -120,7 +121,7 @@ export default {
         searchByRegion() {
             const sidoQueried = this.queried.get("시/도")!
             const sigunguQueried = this.queried.get("시군구")!
-            this.jobs.forEach((job) => {
+            this.jobAll.forEach((job) => {
                 const region = job.data.get("주소")!.split(" ", 2)
                 job.filteredOutBy.delete("시/도")
                 if (sidoQueried.size === 0 || sidoQueried.has(region[0]))
@@ -160,6 +161,18 @@ export default {
                 `${window.location.pathname}?${params.toString()}`
             )
         },
+        // infinite scroll.
+        handleScroll() {
+            const scrollHeight = document.documentElement.scrollHeight;
+            const scrollTop = document.documentElement.scrollTop;
+            const clientHeight = document.documentElement.clientHeight;
+            const lastElement = document.querySelector("#list > div:last-child");
+            if (scrollTop + clientHeight >= scrollHeight - lastElement!.clientHeight) {
+                this.jobs.push(...this.jobAll.slice(this.jobs.length, this.jobs.length + 10));
+            }
+        
+        }
+                // this.jobs.push(...this.jobAll.slice(this.jobs.length, this.jobs.length + 10));
     },
     computed: {
         sigunguPool() {
@@ -180,7 +193,7 @@ export default {
 </script>
 <template>
     <MainTitle></MainTitle>
-    <div>현재 공고가 총 {{ jobs.length }}개 있습니다.</div>
+    <div>현재 공고가 총 {{ mmaData.length }}개 있습니다.</div>
     <div id="filter-panel" class="p-1">
         <div class="dropdown" v-for="entry in optionPool.keys()" :key="entry">
             <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">{{ entry }}</button>
