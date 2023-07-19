@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import MainTitle from "@/components/MainTitle.vue"
 import JobItem from "@/components/JobItem.vue"
-</script>
-<script lang="ts">
 const rawMMAData = await import("../../data.json")
 const mmaData = rawMMAData.default.filter((job) => job.업체명) // 업체명이 없으면 마감된 공고다.
+</script>
+<script lang="ts">
 import timeData from "../../time.json"
 import * as Hangul from "hangul-js"
 
