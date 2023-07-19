@@ -3,8 +3,7 @@ import MainTitle from "@/components/MainTitle.vue"
 import JobItem from "@/components/JobItem.vue"
 </script>
 <script lang="ts">
-const rawMMAData = await import("../../data.json")
-const mmaData = rawMMAData.default.filter((job) => job.업체명) // 업체명이 없으면 마감된 공고다.
+import mmaData from "../../data.json"
 import timeData from "../../time.json"
 import * as Hangul from "hangul-js"
 
@@ -42,6 +41,7 @@ export default {
         ]
         const _data = {
             jobAll: mmaData
+                .filter((job) => job.업체명) // 업체명이 없으면 마감된 공고다.
                 .map((job) => {
                     return new Job(new Map(Object.entries(job)))
                 }),
