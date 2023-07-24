@@ -58,10 +58,6 @@ export default {
         <div class="card-body" data-bs-toggle="modal" data-bs-target="#job-detail-modal" @click="$emit('showDetail')">
             <div class=" card-title fw-bold">
                 {{ job.data.get("업체명") }}
-                <a :href="'https://www.jobplanet.co.kr/search?query=' + job.data.get('업체명')">
-                    <img src="https://jpassets.jobplanet.co.kr/production/uploads/material/media/8456/jp_wordmark_green.svg"
-                        class="jobplanet-link" />
-                </a>
             </div>
             <div class="card-text">
                 <p>{{ job.data.get("주소") }}</p>

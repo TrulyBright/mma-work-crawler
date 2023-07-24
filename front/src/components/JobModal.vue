@@ -27,9 +27,22 @@ export default {
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-light">
+                        <a :href="'https://www.jobplanet.co.kr/search?query=' + job.data.get('업체명')">
+                            <img src="https://jpassets.jobplanet.co.kr/production/uploads/material/media/8456/jp_wordmark_green.svg"
+                                class="jobplanet-link" />
+                        </a>
+                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
                 </div>
             </div>
         </div>
     </div>
 </template>
+<style>
+.modal-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+</style>
