@@ -184,7 +184,7 @@ export default {
             this.kept = this.matches.slice(0, max(this.kept.length, this.maxKept))
             this.maxKept = max(this.kept.length, this.maxKept);
         },
-        showJobDetail(job: Job) {
+        setShownJob(job: Job) {
             this.jobDetailShown = job
         }
     },
@@ -265,11 +265,11 @@ export default {
     </div>
     <div id="list" class="grid gap-3 m-3">
         <template v-for="job in kept" :key="job">
-            <JobItem :job="job" data-bs-toggle="modal" data-bs-target="#job-detail-modal" @click="showJobDetail(job)">
+            <JobItem :job="job" @showDetail="setShownJob(job)">
             </JobItem>
         </template>
     </div>
-    <div id="last-update">
+    <div id=" last-update">
         최근 갱신: {{ lastUpdate.toLocaleDateString("ko-KR", {
             year: "numeric",
             month: "short",
