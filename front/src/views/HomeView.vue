@@ -6,27 +6,8 @@ import JobItem from "@/components/JobItem.vue"
 import mmaData from "../../data.json"
 import timeData from "../../time.json"
 import * as Hangul from "hangul-js"
-
-class Job {
-    data!: Map<string, string>
-    filteredOutBy = new Set<string>()
-    constructor(data: Map<string, string>) {
-        this.data = data
-    }
-}
-
-class Addr {
-    시도!: string
-    시군구!: string
-    constructor(시도: string, 시군구: string) {
-        this.시도 = 시도
-        this.시군구 = 시군구
-    }
-}
-
-const max = (a: number, b: number) => {
-    return a > b ? a : b
-}
+import { Job, Addr } from "@/models/Job"
+import { max } from "@/utils/utils"
 
 const primeNumberCountForEachLoadMore = 11;
 
@@ -52,7 +33,7 @@ export default {
                     return new Job(new Map(Object.entries(job)))
                 }),
             kept: new Array<Job>(),
-            maxKept: 11,
+            maxKept: primeNumberCountForEachLoadMore,
             queried: new Map(
                 entries.map((entry) => [entry, new Set<string>()])
             ),
@@ -76,6 +57,7 @@ export default {
         })
         _data.queried.set("시/도", new Set<string>())
         _data.queried.set("시군구", new Set<string>())
+        _data.queried.set("즐겨찾기", new Set<string>())
         return _data
     },
     mounted() {
@@ -92,16 +74,29 @@ export default {
                     this.toggleOption(key, value, true)
                 }
                 this.searchByFilter(key)
+            } else if (key === "검색어") {
+                this.searchByKeyword(valueArr)
             }
         }
-        const keyword = params.get("검색어")
-        if (keyword)
-            this.searchByKeyword(keyword)
         this.searchByRegion()
         this.loadMore(primeNumberCountForEachLoadMore)
         document.addEventListener("scroll", this.onScroll)
     },
     methods: {
+        searchByFavorite() {
+            this.jobAll.forEach((job) => {
+                if (this.queried.get("즐겨찾기")!.size === 0)
+                    job.filteredOutBy.delete("즐겨찾기")
+                else if (this.queried.get("즐겨찾기")!.has("즐겨찾는 공고") && job.isFavorite)
+                    job.filteredOutBy.delete("즐겨찾기")
+                else if (this.queried.get("즐겨찾기")!.has("즐겨찾지 않는 공고") && !job.isFavorite)
+                    job.filteredOutBy.delete("즐겨찾기")
+                else
+                    job.filteredOutBy.add("즐겨찾기")
+            })
+            this.updateParams("즐겨찾기", Array.from(this.queried.get("즐겨찾기")!))
+            this.updateKept()
+        },
         searchByFilter(key: string) {
             this.jobAll.forEach((job) => {
                 const queried_value = this.queried.get(key)!
@@ -153,19 +148,20 @@ export default {
                     this.updateParams("시군구", Array.from(sigunguSelected!))
                 }
                 this.searchByRegion()
+            } else if (entry === "즐겨찾기") {
+                this.searchByFavorite()
             } else {
                 this.searchByFilter(entry)
             }
             this.updateParams(entry, Array.from(this.queried.get(entry)!))
         },
         updateParams(key: string, values: string[]) {
-            const params = new URLSearchParams(window.location.search)
-            if (values.length === 0) params.delete(key)
-            else params.set(key, values.join(","))
+            if (values.length === 0) this.params.delete(key)
+            else this.params.set(key, values.join(","))
             window.history.replaceState(
                 {},
                 "",
-                `${window.location.pathname}?${params.toString()}`
+                `${window.location.pathname}?${this.params.toString()}`
             )
         },
         loadMore(count: number) {
@@ -188,6 +184,9 @@ export default {
         }
     },
     computed: {
+        params() {
+            return new URLSearchParams(window.location.search)
+        },
         sigunguPool() {
             const pool = Array<Addr>()
             const sidoQueried = this.queried.get("시/도")!
@@ -212,37 +211,55 @@ export default {
     <div>현재 공고가 총 {{ mmaData.length }}개 있습니다.</div>
     <div id="filter-panel" class="p-1">
         <div class="dropdown" v-for="entry in optionPool.keys()" :key="entry">
-            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">{{ entry }}</button>
+            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">{{
+                entry }}</button>
             <ul class="dropdown-menu">
                 <li v-for="option in optionPool.get(entry)" :key="String(option)" class="p-1">
-                    <label for="option" class="px-1">{{ option }}</label>
-                    <input type="checkbox" :checked="queried.get(entry)!.has(option)" @change="toggleOption(entry, option, ($event.target! as HTMLInputElement).checked); updateKept()">
+                    <label :for="option" class="px-1">{{ option }}</label>
+                    <input :name="option" type="checkbox" :checked="queried.get(entry)!.has(option)"
+                        @change="toggleOption(entry, option, ($event.target! as HTMLInputElement).checked); updateKept()">
                 </li>
             </ul>
         </div>
         <div class="dropdown">
-            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">시/도</button>
+            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
+                type="button">시/도</button>
             <ul class="dropdown-menu">
                 <li v-for="sido in Array.from(regionPool.keys()).sort()" :key="String(sido)" class="p-1">
-                    <label for="option" class="px-1">{{ sido }}</label>
-                    <input type="checkbox" :checked="queried.get('시/도')!.has(sido)" @change="toggleOption('시/도', sido, ($event.target! as HTMLInputElement).checked); updateKept()">
+                    <label :for="sido" class="px-1">{{ sido }}</label>
+                    <input :name="sido" type="checkbox" :checked="queried.get('시/도')!.has(sido)"
+                        @change="toggleOption('시/도', sido, ($event.target! as HTMLInputElement).checked); updateKept()">
                 </li>
             </ul>
         </div>
         <div class="dropdown">
-            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">시군구</button>
+            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
+                type="button">시군구</button>
             <ul class="dropdown-menu">
                 <li v-for="addr in sigunguPool" :key="String(addr)" class="p-1">
-                    <label for="option" class="px-1">{{ addr.시도}} {{ addr.시군구 }}</label>
-                    <input type="checkbox" :checked="queried.get('시군구')!.has(addr.시군구)" @change="toggleOption('시군구', addr.시군구, ($event.target! as HTMLInputElement).checked); searchByRegion(); updateKept();">
+                    <label :for="addr.시도 + addr.시군구" class="px-1">{{ addr.시도 }} {{ addr.시군구 }}</label>
+                    <input :name="addr.시도 + addr.시군구" type="checkbox" :checked="queried.get('시군구')!.has(addr.시군구)"
+                        @change="toggleOption('시군구', addr.시군구, ($event.target! as HTMLInputElement).checked); searchByRegion(); updateKept();">
                 </li>
             </ul>
         </div>
-        <input type="text" class="form-control w-50 my-1" placeholder="삼성전자, 운전가능자, Unity, ..." @input="searchByKeyword(($event.target! as HTMLInputElement).value); updateParams('검색어', [($event.target! as HTMLInputElement).value]); updateKept();">
+        <div class="dropdown">
+            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
+                type="button">즐겨찾기</button>
+            <ul class="dropdown-menu">
+                <li v-for="option in ['즐겨찾는 공고', '즐겨찾지 않는 공고']" :key="option" class="p-1">
+                    <label :for="option" class="px-1">{{ option }}</label>
+                    <input :name="option" type="checkbox" :checked="queried.get('즐겨찾기')!.has(option)"
+                        @change="toggleOption('즐겨찾기', option, ($event.target! as HTMLInputElement).checked); searchByFavorite(); updateKept();">
+                </li>
+            </ul>
+        </div>
+        <input type="text" class="form-control w-50 my-1" placeholder="삼성전자, 운전가능자, Unity, ..."
+            @input="searchByKeyword(($event.target! as HTMLInputElement).value); updateParams('검색어', [($event.target! as HTMLInputElement).value]); updateKept();">
     </div>
     <div id="list" class="grid gap-3 m-3">
         <template v-for="job in kept" :key="job">
-            <JobItem :job="job.data"></JobItem>
+            <JobItem :job="job"></JobItem>
         </template>
     </div>
     <div id="last-update">
@@ -330,5 +347,11 @@ export default {
     display: flex;
     flex-direction: row;
     justify-content: left;
+}
+
+#favorite-form {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 }
 </style>
