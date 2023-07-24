@@ -70,7 +70,7 @@ export default {
                 <div class="detail d-none">
                     <div v-for="[entry, value] of Array.from(job.data.entries())
                         .filter(([entry, value]) => typeof value === 'string'
-                            && !['업종', '고용형태', '업체명', '주소', '급여조건', '모집인원'].includes(entry))" :key="entry"
+                            && !['업종', '고용형태', '업체명', '주소', '급여조건', '모집인원', '공고번호'].includes(entry))" :key="entry"
                         :class="entry === '비고' ? 'description' : ''">
                         <label class="fw-bold">{{ entry }}</label>
                         <template v-if="entry === '홈페이지'">
