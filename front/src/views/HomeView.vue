@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import MainTitle from "@/components/MainTitle.vue"
 import JobItem from "@/components/JobItem.vue"
+import JobModal from "@/components/JobModal.vue"
 </script>
 <script lang="ts">
 import mmaData from "../../data.json"
@@ -40,6 +41,7 @@ export default {
             lastUpdate: new Date(timeData.time * 1000),
             regionPool: new Map<string, Set<string>>(), // 시/도: {시군구}
             optionPool: new Map<string, Set<string>>(),
+            jobDetailShown: new Job(new Map<string, string>()),
         }
         mmaData.forEach((job) => {
             entries.forEach((entry: string) => {
@@ -181,6 +183,9 @@ export default {
         updateKept() {
             this.kept = this.matches.slice(0, max(this.kept.length, this.maxKept))
             this.maxKept = max(this.kept.length, this.maxKept);
+        },
+        showJobDetail(job: Job) {
+            this.jobDetailShown = job
         }
     },
     computed: {
@@ -207,6 +212,7 @@ export default {
 }
 </script>
 <template>
+    <JobModal :job="jobDetailShown"></JobModal>
     <MainTitle></MainTitle>
     <div>현재 공고가 총 {{ mmaData.length }}개 있습니다.</div>
     <div id="filter-panel" class="p-1">
@@ -259,7 +265,8 @@ export default {
     </div>
     <div id="list" class="grid gap-3 m-3">
         <template v-for="job in kept" :key="job">
-            <JobItem :job="job"></JobItem>
+            <JobItem :job="job" data-bs-toggle="modal" data-bs-target="#job-detail-modal" @click="showJobDetail(job)">
+            </JobItem>
         </template>
     </div>
     <div id="last-update">

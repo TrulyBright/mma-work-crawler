@@ -55,7 +55,7 @@ export default {
                 </svg>
             </div>
         </div>
-        <div class="card-body" @click="showDetail">
+        <div class="card-body">
             <div class="card-title fw-bold">
                 {{ job.data.get("업체명") }}
                 <a :href="'https://www.jobplanet.co.kr/search?query=' + job.data.get('업체명')">
