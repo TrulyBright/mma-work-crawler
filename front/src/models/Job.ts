@@ -6,10 +6,6 @@ export class Job {
   constructor(data: Map<string, string>) {
     this.data = data
   }
-  get isFavorite() {
-    const favorite = getCookie('favorite')?.split(',') || []
-    return favorite.includes(this.data.get('공고번호')!)
-  }
   toggleFavorite() {
     const favorite = getCookie('favorite')?.split(',') || []
     if (favorite.includes(this.data.get('공고번호')!)) {

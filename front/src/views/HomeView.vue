@@ -8,7 +8,7 @@ import mmaData from "../../data.json"
 import timeData from "../../time.json"
 import * as Hangul from "hangul-js"
 import { Job, Addr } from "@/models/Job"
-import { max } from "@/utils/utils"
+import { getCookie, max } from "@/utils/utils"
 
 const primeNumberCountForEachLoadMore = 11;
 
@@ -89,12 +89,14 @@ export default {
             const favoriteQueried = this.queried.get("즐겨찾기")!
             const isFavorite = favoriteQueried.has("즐겨찾는 공고")
             const isNotFavorite = favoriteQueried.has("즐겨찾지 않는 공고")
+            const favorite = getCookie('favorite')?.split(',') || []
+            const favoriteSet = new Set<string>(favorite)
             this.jobAll.forEach((job) => {
                 if (favoriteQueried.size === 0)
                     job.filteredOutBy.delete("즐겨찾기")
-                else if (isFavorite && job.isFavorite)
+                else if (isFavorite && favoriteSet.has(job.data.get("공고번호")!))
                     job.filteredOutBy.delete("즐겨찾기")
-                else if (isNotFavorite && !job.isFavorite)
+                else if (isNotFavorite && !favoriteSet.has(job.data.get("공고번호")!))
                     job.filteredOutBy.delete("즐겨찾기")
                 else
                     job.filteredOutBy.add("즐겨찾기")
