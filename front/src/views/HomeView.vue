@@ -86,17 +86,20 @@ export default {
     },
     methods: {
         searchByFavorite() {
+            const favoriteQueried = this.queried.get("즐겨찾기")!
+            const isFavorite = favoriteQueried.has("즐겨찾는 공고")
+            const isNotFavorite = favoriteQueried.has("즐겨찾지 않는 공고")
             this.jobAll.forEach((job) => {
-                if (this.queried.get("즐겨찾기")!.size === 0)
+                if (favoriteQueried.size === 0)
                     job.filteredOutBy.delete("즐겨찾기")
-                else if (this.queried.get("즐겨찾기")!.has("즐겨찾는 공고") && job.isFavorite)
+                else if (isFavorite && job.isFavorite)
                     job.filteredOutBy.delete("즐겨찾기")
-                else if (this.queried.get("즐겨찾기")!.has("즐겨찾지 않는 공고") && !job.isFavorite)
+                else if (isNotFavorite && !job.isFavorite)
                     job.filteredOutBy.delete("즐겨찾기")
                 else
                     job.filteredOutBy.add("즐겨찾기")
             })
-            this.updateParams("즐겨찾기", Array.from(this.queried.get("즐겨찾기")!))
+            this.updateParams("즐겨찾기", Array.from(favoriteQueried))
             this.updateKept()
         },
         searchByFilter(key: string) {
@@ -269,7 +272,7 @@ export default {
             </JobItem>
         </template>
     </div>
-    <div id=" last-update">
+    <div id="last-update">
         최근 갱신: {{ lastUpdate.toLocaleDateString("ko-KR", {
             year: "numeric",
             month: "short",
