@@ -18,7 +18,7 @@ export default {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div v-for="[entry, value] of job.data.entries()">
+                    <div v-for="[entry, value] of Array.from(job.data.entries()).filter(([e, v]) => e !== '공고번호')">
                         <label class=" fw-bold">{{ entry }}</label>
                         <template v-if="entry === '홈페이지'">
                             <p><a :href="job.linkToExternal()">{{ value }}</a></p>
@@ -27,13 +27,17 @@ export default {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light">
-                        <a :href="'https://www.jobplanet.co.kr/search?query=' + job.data.get('업체명')">
-                            <img src="https://jpassets.jobplanet.co.kr/production/uploads/material/media/8456/jp_wordmark_green.svg"
-                                class="jobplanet-link" />
-                        </a>
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <a class="btn btn-light jobplanet-link"
+                        :href="'https://www.jobplanet.co.kr/search?query=' + job.data.get('업체명')">
+                        <img
+                            src="https://jpassets.jobplanet.co.kr/production/uploads/material/media/8456/jp_wordmark_green.svg" />
+                    </a>
+                    <a class="btn btn-light mma-link"
+                        :href="'https://work.mma.go.kr/caisBYIS/search/cygonggogeomsaekView.do?cygonggo_no=' + job.data.get('공고번호')!">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/Emblem_of_the_Government_of_the_Republic_of_Korea.svg"
+                            class="mma-logo" />
+                        <small>병역일터에서 보기</small>
+                    </a>
                 </div>
             </div>
         </div>
@@ -44,5 +48,18 @@ export default {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+}
+
+.mma-link {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+}
+
+.mma-logo {
+    display: inline;
+    width: 2em;
+    height: auto;
 }
 </style>
