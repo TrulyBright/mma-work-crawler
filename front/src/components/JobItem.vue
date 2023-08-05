@@ -21,15 +21,6 @@ export default {
             this.$el.classList.add("shadow-sm")
             this.$el.classList.remove("shadow")
         },
-        showDetail() {
-            this.$el.querySelector(".detail").classList.remove("d-none");
-            this.$el.querySelector(".card-body").classList.add("expanded");
-        },
-        hideDetail() {
-            this.$el.querySelector(".detail").classList.add("d-none");
-            this.$el.scrollIntoView();
-            this.$el.querySelector(".card-body").classList.remove("expanded");
-        },
     },
 }
 </script>
@@ -63,21 +54,7 @@ export default {
                 <p>{{ job.data.get("주소") }}</p>
                 <p>{{ job.data.get("급여조건") }}</p>
                 <p>{{ job.data.get("모집인원") }} 모집</p>
-                <div class="detail d-none">
-                    <div v-for="[entry, value] of Array.from(job.data.entries())
-                        .filter(([entry, value]) => typeof value === 'string'
-                            && !['업종', '고용형태', '업체명', '주소', '급여조건', '모집인원', '공고번호'].includes(entry))" :key="entry"
-                        :class="entry === '비고' ? 'description' : ''">
-                        <label class="fw-bold">{{ entry }}</label>
-                        <template v-if="entry === '홈페이지'">
-                            <p><a :href="job.linkToExternal()">{{ value }}</a></p>
-                        </template>
-                        <p v-else v-for="p in value.split('\n')" :key="p">{{ p }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="hide-detail">
-                <small @click.stop="hideDetail">접기</small>
+                <p><strong>~{{ job.data.get("접수기간") }}</strong></p>
             </div>
         </div>
     </div>
