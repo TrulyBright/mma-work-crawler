@@ -18,14 +18,10 @@ def fetch(endpoint: str, key: str):
     }).content.decode()
 
 def save(data: str):
-    with open("data/openings.xml", "w") as f:
+    with open("front/openings.xml", "w") as f:
         f.write(data)
 
-def mkdir():
-    pathlib.Path("data").mkdir(exist_ok=True)
-
 def run():
-    mkdir()
     save(fetch(get_api_endpoint(), get_api_key()))
 
 if __name__ == "__main__":
