@@ -1,4 +1,5 @@
-import { FormControlLabel, FormGroup, Checkbox, Divider, Box, Typography, FormControl, FormLabel, Grid, Card, CardContent } from "@mui/material"
+import { FormControlLabel, FormGroup, Grid, Checkbox, Typography, FormControl, FormLabel, Card, CardContent, CardHeader, Stack } from "@mui/material"
+import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
 
 const 풀 = {}
@@ -16,8 +17,8 @@ Object.entries(속성풀).forEach(([속성명, 후보]) => {
 export default () => {
     return (
         <>
-        <Typography variant="h6" gutterBottom>채용공고 검색</Typography>
         <Card>
+            <CardHeader title="채용공고검색조건" />
             <CardContent>
                 <FormControl component="fieldset">
                     <FormLabel component="legend">역종</FormLabel>
@@ -55,22 +56,40 @@ export default () => {
                 </FormControl>
                 <FormControl component="fieldset">
                     <FormLabel component="legend">급여</FormLabel>
-                    <FormGroup row>
+                    <Grid container columns={{xs: 4, sm: 8, md: 12}} sx={{maxHeight: "50vh", overflow: "auto"}}>
                         {Object.entries(풀.급여).map(([코드, 급여]) => (
-                            <FormControlLabel key={코드} control={<Checkbox size="small" />} label={급여} />
+                            <Grid item xs={2} sm={4} md={4} key={코드}>
+                                <FormControlLabel key={코드} control={<Checkbox size="small" />} label={급여} />
+                            </Grid>
                         ))}
-                    </FormGroup>
+                    </Grid>
                 </FormControl>
                 <FormControl component="fieldset">
                     <FormLabel component="legend">복리후생</FormLabel>
-                    <FormGroup row>
-                        {풀.복리후생.map(복지 => (
-                            <FormControlLabel key={복지} control={<Checkbox size="small" />} label={복지}/>
+                    <Grid container columns={{xs: 4, sm: 8, md: 12}} sx={{maxHeight: "50vh", overflow: "auto"}}>
+                        {Object.entries(풀.복리후생).map(([코드, 복지]) => (
+                            <Grid item xs={2} sm={4} md={4} key={코드}>
+                                <FormControlLabel key={코드} control={<Checkbox size="small" />} label={복지} />
+                            </Grid>
                         ))}
-                    </FormGroup>
+                    </Grid>
                 </FormControl>
             </CardContent>
         </Card>
+        <Typography variant="h6" gutterBottom>공고가 {채용공고목록.length}개 있습니다.</Typography>
+        <Stack spacing={2}>
+            {채용공고목록.map((채용공고, i) => (
+                <Card key={i}>
+                    <CardHeader title={채용공고.공고제목} subheader={채용공고.업종} />
+                    <CardContent>
+                        <Typography variant="body2" gutterBottom>업체명: {채용공고.업체명}</Typography>
+                        <Typography variant="body2" gutterBottom>근무지: {채용공고.근무지시도}</Typography>
+                        <Typography variant="body2" gutterBottom>급여: {채용공고.급여}</Typography>
+                        <Typography variant="body2" gutterBottom>복리후생: {채용공고.복리후생}</Typography>
+                    </CardContent>
+                </Card>
+            ))}
+        </Stack>
         </>
     )
 }
