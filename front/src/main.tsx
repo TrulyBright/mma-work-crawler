@@ -1,17 +1,28 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import {
-  createBrowserRouter,
-  RouterProvider
+  Navigate,
+  Route,
+  RouteObject,
+  RouterProvider,
+  Routes,
+  createBrowserRouter
 } from "react-router-dom"
 import Root from './routes/Root'
-import ErrorPage from './ErrorPage'
+import Openings from './routes/Openings'
+import Companies from './routes/Companies'
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: '/',
+    element: <Navigate to="/openings" />
+  },
+  {
     element: <Root />,
-    errorElement: <ErrorPage />
+    children: [
+      { path: 'openings', element: <Openings /> },
+      { path: 'companies', element: <Companies /> },
+    ]
   }
 ])
 
