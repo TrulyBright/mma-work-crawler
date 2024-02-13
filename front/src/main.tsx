@@ -2,15 +2,13 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import {
   Navigate,
-  Route,
-  RouteObject,
   RouterProvider,
-  Routes,
   createBrowserRouter
 } from "react-router-dom"
 import Root from './routes/Root'
 import Openings from './routes/Openings'
 import Companies from './routes/Companies'
+import './base.css'
 
 const router = createBrowserRouter([
   {
