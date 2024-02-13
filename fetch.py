@@ -71,17 +71,18 @@ def build_entry_pool(data: list[dict]):
 
 def save_with_pool(data: list[dict]):
     logging.info("Saving data with its entry pool...")
-    with open("front/openings.json", "w") as f, open("front/openings_pool.json", "w") as p:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-        json.dump(build_entry_pool(data), p, ensure_ascii=False, indent=4)
+    os.makedirs("front/data", exist_ok=True)
+    with open("front/data/채용공고목록.json", "w") as f, open("front/data/속성풀.json", "w") as p:
+        json.dump(data, f, ensure_ascii=False)
+        json.dump(build_entry_pool(data), p, ensure_ascii=False)
 
 def run():
     logging.basicConfig(level=logging.INFO)
-    # endpoint = get_api_endpoint()
-    # key = get_api_key()
-    # data = fetch(endpoint, key)
-    with open("front/openings.xml") as f:
-        data = f.read()
+    endpoint = get_api_endpoint()
+    key = get_api_key()
+    data = fetch(endpoint, key)
+    # with open("front/openings.xml") as f:
+    #     data = f.read()
     parsed = parse(data)
     translated = translate(parsed)
     numberized = numberize(translated)
