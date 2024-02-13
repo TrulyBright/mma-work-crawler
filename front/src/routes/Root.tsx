@@ -1,7 +1,7 @@
 import React from "react"
-import { AppBar, Box, CssBaseline, Divider, Drawer, IconButton, Link, List, ListItem, ListItemButton, ListItemIcon, ListItemText, ThemeProvider, Toolbar, createMuiTheme, createTheme, useTheme } from "@mui/material"
+import { AppBar, Box, CssBaseline, Divider, Drawer, IconButton, Link, List, ListItem, ListItemButton, ListItemIcon, ListItemText, ThemeProvider, Toolbar, createTheme, useTheme } from "@mui/material"
 import { Business, DarkMode, GitHub, LightMode, ManageSearch, Menu } from '@mui/icons-material'
-import { Link as RouterLink } from "react-router-dom"
+import { Outlet, Link as RouterLink } from "react-router-dom"
 
 const drawerWidth = 240
 const ColorModeContext = React.createContext({ toggleColorMode: () => {} })
@@ -97,6 +97,10 @@ const Root = () => {
                 >
                 {drawer}
                 </Drawer>
+            </Box>
+            <Box component="main" sx={{flexGrow: 1, p: 3, width: {sm: `calc(100% - ${drawerWidth}px)`}}}>
+                <Toolbar />
+                <Outlet />
             </Box>
         </Box>
     )

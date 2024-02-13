@@ -9,14 +9,17 @@ import Root from './routes/Root'
 import Openings from './routes/Openings'
 import Companies from './routes/Companies'
 import './base.css'
+import ErrorPage from './ErrorPage'
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/openings" />
+    element: <Navigate to="/openings" />,
+    errorElement: <ErrorPage />
   },
   {
     element: <Root />,
+    errorElement: <ErrorPage />,
     children: [
       { path: 'openings', element: <Openings /> },
       { path: 'companies', element: <Companies /> },
