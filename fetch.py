@@ -107,6 +107,8 @@ def fill_option_pool(data: list[dict]):
                 pools[key].update(value)
             else:
                 pools[key].add(value)
+            if "" in pools[key]:
+                pools[key].remove("")
     return {key: sorted(value) for key, value in pools.items()}
 
 def save(data: list[dict]):
