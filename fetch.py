@@ -42,23 +42,6 @@ def translate(data: list[dict]):
         translation = json.load(f)["국문명"]
     return [{translation[key]: value for key, value in item.items()} for item in data]
 
-def numberize(data: list[dict]):
-    logger.info("Numberizing data...")
-    with open("postprocessdata.json") as f:
-        convertable = json.load(f)["int변환가능항목"]
-    for item in data:
-        for key, value in item.items():
-            if key in convertable:
-                item[key] = int(value)
-    return data
-
-def seperate복리후생(data: list[dict]):
-    logger.info("Seperating '복리후생'...")
-    for item in data:
-        if "복리후생" in item:
-            item["복리후생"] = item["복리후생"].split(", ")
-    return data
-
 async def scrap_extra_info(data: list[dict]):
     """API로 조회되지 않는 정보는 사이트를 직접 스크랩해서 가져온다."""
     logger.info("Scraping extra info...")
@@ -96,6 +79,23 @@ def parse_extra_info(data: list[httpx.Response]):
             return {}
     return [f(response) for response in tqdm(data)]
 
+def seperate복리후생(data: list[dict]):
+    logger.info("Seperating '복리후생'...")
+    for item in data:
+        if "복리후생" in item:
+            item["복리후생"] = item["복리후생"].split(", ")
+    return data
+
+def seperate자격증(data: list[dict]):
+    logger.info("Seperating '자격증'...")
+    for item in data:
+        if 자격증 := item.get("자격증"):
+            item["자격증"] = list(map(lambda line: line.split(">")[-1], 자격증.split(",")))
+    return data
+
+def seperate(data: list[dict]):
+    return seperate복리후생(seperate자격증(data))
+
 def fill_option_pool(data: list[dict]):
     """속성 풀을 채운다."""
     pools: dict[str, set] = dict()
@@ -132,12 +132,11 @@ def run():
     data = fetch(endpoint, key)
     parsed = parse(data)
     translated = translate(parsed)
-    numberized = numberize(translated)
-    seperated = seperate복리후생(numberized)
-    extra_info = asyncio.run(scrap_extra_info(seperated))
+    extra_info = asyncio.run(scrap_extra_info(translated))
     parsed_extra_info = parse_extra_info(extra_info)
-    for item, extra in zip(seperated, parsed_extra_info, strict=True):
+    for item, extra in zip(translated, parsed_extra_info, strict=True):
         item.update(extra)
+    seperated = seperate(translated)
     save(seperated)
 
 if __name__ == "__main__":
