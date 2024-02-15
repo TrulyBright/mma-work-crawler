@@ -32,9 +32,9 @@ const 상세검색순서 = [
 
 const gridcheckboxesByEntries = (entries: string[]) => {
     return entries.map((entry) => (
-        <FormControl key={entry} component="fieldset">
+        <FormControl key={entry} component="fieldset" sx={{display: "flex", flexDirection: "row", alignItems: "start", width: 1}}>
             <FormLabel component="legend"><strong>{entry}</strong></FormLabel>
-            <Grid container columns={{xs: 1, sm: 2, md: 2}} sx={{maxHeight: "50vh", overflow: "auto"}}>
+            <Grid container columns={{ xs: 1, sm: 2, md: 3 }} sx={{maxHeight: "50vh", overflow: "auto"}}>
                 {속성풀[entry].map((속성) => (
                     <Grid item xs={1} sm={1} md={1} key={속성}>
                         <FormControlLabel key={속성} control={<Checkbox size="small" />} label={속성} />
