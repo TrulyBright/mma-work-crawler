@@ -96,11 +96,28 @@ def parse_extra_info(data: list[httpx.Response]):
             return {}
     return [f(response) for response in tqdm(data)]
 
+def fill_option_pool(data: list[dict]):
+    """속성 풀을 채운다."""
+    pools: dict[str, set] = dict()
+    for item in data:
+        for key, value in item.items():
+            if key not in pools:
+                pools[key] = set()
+            if isinstance(value, list):
+                pools[key].update(value)
+            else:
+                pools[key].add(value)
+    return {key: sorted(value) for key, value in pools.items()}
+
 def save(data: list[dict]):
-    logger.info("Saving data...")
+    logger.info("Saving data & pool...")
     os.makedirs("front/data", exist_ok=True)
-    with open("front/data/채용공고목록.json", "w") as f:
+    with (
+        open("front/data/채용공고목록.json", "w") as f,
+        open("front/data/속성풀.json", "w") as g
+    ):
         json.dump(data, f, ensure_ascii=False)
+        json.dump(fill_option_pool(data), g, ensure_ascii=False)
 
 def setup_logging():
     handler = colorlog.StreamHandler()
