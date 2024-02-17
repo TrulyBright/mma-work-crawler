@@ -20,6 +20,12 @@ dependencies:
   '@types/react-router-dom':
     specifier: ^5.3.3
     version: 5.3.3
+  '@types/react-virtualized-auto-sizer':
+    specifier: ^1.0.4
+    version: 1.0.4
+  '@types/react-window':
+    specifier: ^1.8.8
+    version: 1.8.8
   cox-postposition:
     specifier: ^1.4.1
     version: 1.4.1
@@ -32,6 +38,12 @@ dependencies:
   react-router-dom:
     specifier: ^6.22.0
     version: 6.22.0(react-dom@18.2.0)(react@18.2.0)
+  react-virtualized-auto-sizer:
+    specifier: ^1.0.22
+    version: 1.0.22(react-dom@18.2.0)(react@18.2.0)
+  react-window:
+    specifier: ^1.8.10
+    version: 1.8.10(react-dom@18.2.0)(react@18.2.0)
 
 devDependencies:
   '@types/react':
@@ -1011,6 +1023,18 @@ packages:
       '@types/react': 18.2.55
     dev: false
 
+  /@types/react-virtualized-auto-sizer@1.0.4:
+    resolution: {integrity: sha512-nhYwlFiYa8M3S+O2T9QO/e1FQUYMr/wJENUdf/O0dhRi1RS/93rjrYQFYdbUqtdFySuhrtnEDX29P6eKOttY+A==}
+    dependencies:
+      '@types/react': 18.2.55
+    dev: false
+
+  /@types/react-window@1.8.8:
+    resolution: {integrity: sha512-8Ls660bHR1AUA2kuRvVG9D/4XpRC6wjAaPT9dil7Ckc76eP9TKWZwwmgfq8Q1LANX3QNDnoU4Zp48A3w+zK69Q==}
+    dependencies:
+      '@types/react': 18.2.55
+    dev: false
+
   /@types/react@18.2.55:
     resolution: {integrity: sha512-Y2Tz5P4yz23brwm2d7jNon39qoAtMMmalOQv6+fEFt1mT+FcM3D841wDpoUvFXhaYenuROCy3FZYqdTjM7qVyA==}
     dependencies:
@@ -1820,6 +1844,10 @@ packages:
       yallist: 4.0.0
     dev: true
 
+  /memoize-one@5.2.1:
+    resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
+    dev: false
+
   /merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
@@ -2027,6 +2055,29 @@ packages:
       dom-helpers: 5.2.1
       loose-envify: 1.4.0
       prop-types: 15.8.1
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: false
+
+  /react-virtualized-auto-sizer@1.0.22(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-2CGT/4rZ6jvVkKqzJGnZlyQxj4rWPKAwZR80vMlmpYToN18xaB0yIODOoBltWZLbSgpHBpIk0Ae1nrVO9hVClA==}
+    peerDependencies:
+      react: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0
+      react-dom: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: false
+
+  /react-window@1.8.10(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-Y0Cx+dnU6NLa5/EvoHukUD0BklJ8qITCtVEPY1C/nL8wwoZ0b5aEw8Ff1dOVHw7fCzMt55XfJDd8S8W8LCaUCg==}
+    engines: {node: '>8.0.0'}
+    peerDependencies:
+      react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.23.9
+      memoize-one: 5.2.1
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
