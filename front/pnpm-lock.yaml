@@ -20,6 +20,9 @@ dependencies:
   '@types/react-router-dom':
     specifier: ^5.3.3
     version: 5.3.3
+  cox-postposition:
+    specifier: ^1.4.1
+    version: 1.4.1
   react:
     specifier: ^18.2.0
     version: 18.2.0
@@ -1317,6 +1320,10 @@ packages:
       parse-json: 5.2.0
       path-type: 4.0.0
       yaml: 1.10.2
+    dev: false
+
+  /cox-postposition@1.4.1:
+    resolution: {integrity: sha512-TNXGxd7l49ogBp0VMVDHhId2wk2NTpzcR2xg+rjHzB25YSs91gEDko0WmV9xPNLZzPnqdeBcrVHbHJzo3EfnNQ==}
     dev: false
 
   /cross-spawn@7.0.3:

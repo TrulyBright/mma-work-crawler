@@ -3,6 +3,7 @@ import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
 import { ExpandMore } from "@mui/icons-material"
 import React from "react"
+import postposition from "cox-postposition"
 
 const 주요검색순서 = [
     "역종",
@@ -33,7 +34,7 @@ const 상세검색순서 = [
 const gridcheckboxesByEntries = (entries: string[]) => {
     return entries.map((entry) => (
         <FormControl key={entry} component="fieldset" sx={{display: "flex", flexDirection: "row", alignItems: "start", width: 1}}>
-            <FormLabel component="legend"><strong>{entry}</strong></FormLabel>
+            <FormLabel component="legend"><strong>{entry}</strong> <small>공고가 없는 {postposition.put(entry, "는")} 나오지 않습니다.</small></FormLabel>
             <Grid container columns={{ xs: 1, sm: 2, md: 3 }} sx={{maxHeight: "50vh", overflow: "auto"}}>
                 {속성풀[entry].map((속성) => (
                     <Grid item xs={1} sm={1} md={1} key={속성}>
