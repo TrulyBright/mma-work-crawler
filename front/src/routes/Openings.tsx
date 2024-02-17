@@ -1,7 +1,7 @@
-import { FormControlLabel, FormGroup, Grid, Checkbox, Typography, FormControl, FormLabel, Card, CardContent, CardHeader, Stack, CardActions, Box, Button, Collapse, ListItem, Radio, RadioGroup } from "@mui/material"
+import { FormControlLabel, FormGroup, Grid, Checkbox, Typography, FormControl, FormLabel, Card, CardContent, CardHeader, Stack, CardActions, Box, Button, Collapse, ListItem, Radio, RadioGroup, ListItemText } from "@mui/material"
 import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
-import { ExpandMore } from "@mui/icons-material"
+import { ExpandMore, Star } from "@mui/icons-material"
 import React from "react"
 import postposition from "cox-postposition"
 import { FixedSizeList, ListChildComponentProps } from "react-window"
@@ -12,7 +12,8 @@ const 주요검색순서 = [
     "요원",
     "업종",
     "급여",
-    "전직자 채용가능"
+    "전직자 채용가능",
+    "주소"
 ]
 
 const 상세검색순서 = [
@@ -35,11 +36,11 @@ const 상세검색순서 = [
 
 interface Filter {
     entry: string
-    values: string[]
+    values: (string | string[])[]
 }
 
 const gridcheckboxesByEntries = (entries: string[], filters: Filter[], setFilters: React.Dispatch<React.SetStateAction<Filter[]>>) => {
-    const onCheck = (entry: string, value: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onCheck = (entry: string, value: string | string[]) => (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
             if (filters.some((filter) => filter.entry === entry)) {
                 setFilters(filters.map((filter) => filter.entry === entry ? {...filter, values: [...filter.values, value]} : filter))
@@ -53,10 +54,10 @@ const gridcheckboxesByEntries = (entries: string[], filters: Filter[], setFilter
     return entries.map((entry) => (
         <FormControl key={entry} component="fieldset" sx={{display: "flex", flexDirection: "row", alignItems: "start", width: 1}}>
             <FormLabel component="legend"><strong>{entry}</strong> <small>공고가 없는 {postposition.put(entry, "는")} 나오지 않습니다.</small></FormLabel>
-            <Grid container columns={{ xs: 1, sm: 2, md: 3 }} sx={{maxHeight: "50vh", overflow: "auto"}}>
+            <Grid container columns={{ xs: 1, sm: 2, md: 3 }} sx={{maxHeight: "30vh", overflow: "auto"}}>
                 {속성풀[entry].map((속성) => (
                     <Grid item xs={1} sm={1} md={1} key={속성}>
-                        <FormControlLabel key={속성} control={<Checkbox size="small" onChange={onCheck(entry, 속성)}/>} label={속성} />
+                        <FormControlLabel key={속성} control={<Checkbox size="small" onChange={onCheck(entry, 속성)}/>} label={속성 instanceof Array ? 속성.join(" ") : 속성} />
                     </Grid>
                 ))}
             </Grid>
@@ -65,11 +66,15 @@ const gridcheckboxesByEntries = (entries: string[], filters: Filter[], setFilter
 }
 
 const 단일공고단일필터검사 = (채용공고: Object, filter: Filter) => {
-    const value = 채용공고[filter.entry]
-    if (value === undefined) return true
+    const 공고값 = 채용공고[filter.entry]
+    if (공고값 === undefined) return true
     if (filter.values.length === 0) return true
-    if (value instanceof Array) return filter.values.every((v) => value.includes(v))
-    return filter.values.includes(value)
+    if (공고값 instanceof Array) {
+        if (filter.values[0] instanceof Array) // 주소인 경우로, 하나라도 포함되면 됨.
+            return (filter.values as string[][]).some((v: string[]) => v.every(vv => 공고값.includes(vv)))
+        return filter.values.every((v) => 공고값.includes(v)) // 복리후생인 경우로, 다 포함되어야 함.
+    }
+    return filter.values.includes(공고값)
 }
 
 const 단일공고다중필터검사 = (채용공고: Object, filters: Filter[]) => {
@@ -83,6 +88,12 @@ const 복수공고단일필터검사 = (채용공고목록: Object[], filter: Fi
 const 복수공고다중필터검사 = (채용공고목록: Object[], filters: Filter[]) => {
     return 채용공고목록.filter((채용공고) => 단일공고다중필터검사(채용공고, filters))
 }
+
+const 공고 = (채용공고: Object) => (
+    <ListItem key={채용공고.공고번호}>
+        <ListItemText primary={채용공고.공고제목} secondary={채용공고.업체명} />
+    </ListItem>
+)
 
 export default () => {
     const [expanded, setExpanded] = React.useState(false)
@@ -116,27 +127,14 @@ export default () => {
                 </CardActions>
             </Collapse>
         </Card>
-        <Typography variant="h6" gutterBottom>조건에 맞는 공고가 {채용공고목록.length}개 있습니다.</Typography>
-        {/* <AutoSizer>
+        <Typography>전체 공고 {채용공고목록.length}개 중 {visibleOpenings.length}개가 조건에 맞습니다.</Typography>
+        <AutoSizer>
             {({ height, width }) => (
-                <FixedSizeList height={height} width={width} itemCount={50} itemSize={50} overscanCount={5}> */}
-                    {visibleOpenings.map((채용공고) => (
-                        <Card key={채용공고.공고번호}>
-                            <CardHeader title={채용공고.공고제목} subheader={채용공고.업체명} />
-                            <CardContent>
-                                <Stack direction="row" spacing={2}>
-                                    <Typography variant="body1" gutterBottom>{채용공고.역종}</Typography>
-                                    <Typography variant="body1" gutterBottom>{채용공고.요원}</Typography>
-                                    <Typography variant="body1" gutterBottom>{채용공고.업종}</Typography>
-                                    <Typography variant="body1" gutterBottom>{채용공고.급여}</Typography>
-                                    <Typography variant="body1" gutterBottom>{채용공고.전직자채용가능}</Typography>
-                                </Stack>
-                            </CardContent>
-                        </Card>
-                    ))}
-                {/* </FixedSizeList>
+                <FixedSizeList height={height} width={width} itemCount={visibleOpenings.length} itemSize={50}>
+                    {(props: ListChildComponentProps) => 공고(visibleOpenings[props.index])}
+                </FixedSizeList>
             )}
-        </AutoSizer> */}
+        </AutoSizer>
         </>
     )
 }
