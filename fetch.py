@@ -57,6 +57,7 @@ def parse_extra_info(data: list[httpx.Response]):
     def f(response: httpx.Response):
         soup = bs4.BeautifulSoup(response.text, "html.parser")
         속성 = {
+            "주소",
             "전직자 채용가능",
             "출퇴근시간",
             "특근·잔업",
@@ -74,9 +75,12 @@ def parse_extra_info(data: list[httpx.Response]):
             값 = {entry: soup.find("th", string=entry).find_next_sibling().text.strip() for entry in 속성}
             값["비고"] = soup.find("table", attrs={"summary": "비고 사항"}).find("td").get_text("\n", True)
             return 값
-        except: # 공고가 마감됐는데 API에는 남아 있는 경우 예외가 난다. 그냥 냅둔다.
-            logger.warning(f"추가 사항을 파싱하는데 실패했습니다. {response.url}")
-            return {}
+        except:
+            비고= soup.find("table", attrs={"summary": "비고 사항"}).find("td").get_text("\n", True)
+            if 비고 == "이미 마감된 채용공고입니다.":
+                return {}
+            logger.error(f"추가 사항을 파싱하는데 실패했습니다. {response.url}")
+            raise
     return [f(response) for response in tqdm(data)]
 
 def seperate복리후생(data: list[dict]):
@@ -93,8 +97,15 @@ def seperate자격증(data: list[dict]):
             item["자격증"] = list(map(lambda line: line.split(">")[-1], 자격증.split(",")))
     return data
 
+def sepearte주소(data: list[dict]):
+    logger.info("Seperating '주소'...")
+    for item in data:
+        if 주소 := item.get("주소"):
+            item["주소"] = 주소.split(" ")
+    return data
+
 def seperate(data: list[dict]):
-    return seperate복리후생(seperate자격증(data))
+    return sepearte주소(seperate자격증(seperate복리후생(data)))
 
 def fill_option_pool(data: list[dict]):
     """속성 풀을 채운다."""
@@ -103,13 +114,15 @@ def fill_option_pool(data: list[dict]):
         for key, value in item.items():
             if key not in pools:
                 pools[key] = set()
-            if isinstance(value, list):
+            if key == "주소":
+                pools[key].add(tuple(value[:2]))
+            elif isinstance(value, list):
                 pools[key].update(value)
             else:
                 pools[key].add(value)
             if "" in pools[key]:
                 pools[key].remove("")
-    return {key: sorted(value) for key, value in pools.items()}
+    return {key: sorted(value) for key, value in pools.items() if value}
 
 def save(data: list[dict]):
     logger.info("Saving data & pool...")
@@ -137,8 +150,12 @@ def run():
     extra_info = asyncio.run(scrap_extra_info(translated))
     parsed_extra_info = parse_extra_info(extra_info)
     for item, extra in zip(translated, parsed_extra_info, strict=True):
-        item.update(extra)
-    seperated = seperate(translated)
+        if extra:
+            item.update(extra)
+        else:
+            item.clear()
+    excluding_closed = [item for item in translated if item]
+    seperated = seperate(excluding_closed)
     save(seperated)
 
 if __name__ == "__main__":
