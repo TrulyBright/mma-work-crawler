@@ -1,7 +1,7 @@
-import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, Typography } from "@mui/material"
+import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, Typography, ListItemIcon, Icon } from "@mui/material"
 import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
-import { AttachMoney, Badge, Bedtime, Business, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, Science, Translate, WorkHistory } from "@mui/icons-material"
+import { AttachMoney, Badge, Bedtime, Business, Campaign, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, OpenInNew, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, Science, Translate, WorkHistory } from "@mui/icons-material"
 import React from "react"
 import { Filter } from "../interfaces"
 import 검색폼 from "../검색폼"
@@ -54,45 +54,48 @@ const 복수공고다중필터검사 = (채용공고목록: Object[], filters: F
     return 채용공고목록.filter((채용공고) => 단일공고다중필터검사(채용공고, filters))
 }
 
-// const iconByFilter = {
-//     복리후생: Restaurant,
-//     공고등록일: EditCalendar,
-//     최종변동일: EventNote,
-//     최종학력: School,
-//     담당자명: Badge,
-//     담당업무: FormatListBulleted,
-//     담당자연락처: Phone,
-//     대표연락처: Phone,
-//     업체명: Business,
-//     업종: Factory,
-//     근무형태: Looks5,
-//     경력구분: Filter9Plus,
-//     급여: AttachMoney,
-//     홈페이지: Home,
-//     접수방법: Publish,
-//     마감일: EventBusy,
-//     모집인원: GroupAdd,
-//     사업자등록번호: Pin,
-//     역종: FormatListNumbered,
-//     요원: Engineering,
-//     현역편입인원: People,
-//     출퇴근시간: Schedule,
-//     "전직자 채용가능": MoveDown,
-//     특근·잔업: Bedtime,
-//     현역배정인원: People,
-//     퇴직금지급: AttachMoney,
-//     교대근무: ChangeCircle,
-//     수습기간: DateRange,
-//     주소: Place,
-//     자격증: Handyman,
-//     "식사(비)지급": LocalDining,
-//     보충역편입인원: People,
-//     비고: Notes,
-//     경력년수: Filter9Plus,
-//     전공: HistoryEdu,
-//     외국어: Translate,
-//     외국어구사능력: FormatListNumbered
-// }
+const iconByFilter = {
+    공고제목: Campaign,
+    복리후생: Restaurant,
+    공고등록일: EditCalendar,
+    최종변동일: EventNote,
+    최종학력: School,
+    담당자명: Badge,
+    담당업무: FormatListBulleted,
+    담당자연락처: Phone,
+    대표연락처: Phone,
+    업체명: Business,
+    업종: Factory,
+    근무형태: Looks5,
+    경력구분: Filter9Plus,
+    급여: AttachMoney,
+    홈페이지: Home,
+    접수방법: Publish,
+    마감일: EventBusy,
+    모집인원: GroupAdd,
+    사업자등록번호: Pin,
+    역종: FormatListNumbered,
+    요원: Engineering,
+    현역편입인원: People,
+    출퇴근시간: Schedule,
+    "전직자 채용가능": MoveDown,
+    특근·잔업: Bedtime,
+    현역배정인원: People,
+    퇴직금지급: AttachMoney,
+    교대근무: ChangeCircle,
+    수습기간: DateRange,
+    주소: Place,
+    자격증: Handyman,
+    "식사(비)지급": LocalDining,
+    보충역편입인원: People,
+    보충역배정인원: People,
+    비고: Notes,
+    경력년수: Filter9Plus,
+    전공: HistoryEdu,
+    외국어: Translate,
+    외국어구사능력: FormatListNumbered,
+    홈페이지주소: Home
+}
 
 const detailOrder = [
     ["공고제목", "공고번호"],
@@ -133,7 +136,7 @@ export default () => {
         <Paper>
         <List subheader={<ListSubheader>검색조건</ListSubheader>}>
             {주요검색순서.map((entry) => (
-                <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} />
+                <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} icon={iconByFilter[entry]} />
             ))}
             <ListItemButton onClick={() => setExpanded(!expanded)}>
                 <ExpandMore sx={{
@@ -148,7 +151,7 @@ export default () => {
             </ListItemButton>
             <Collapse in={expanded}>
                 {상세검색순서.map((entry) => (
-                    <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} />
+                    <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} icon={iconByFilter[entry]} />
                 ))}
                 <ListItemButton onClick={() => setExpanded(!expanded)}>
                     <ExpandLess />
@@ -173,23 +176,25 @@ export default () => {
                             <List disablePadding dense sx={{pl: 4}}>
                                 {detailOrder.map(entryList => {
                                     const availableEntry = entryList.filter(entry => 공고.hasOwnProperty(entry))
+                                    if (availableEntry.length === 0) return;
+                                    const IconForThisEntry = iconByFilter[availableEntry[0]]
                                     const availableValue = availableEntry.map(entry => 공고[entry])
                                     const text = availableValue.join(" / ")
                                     const content = availableEntry.includes("공고번호") ? (
                                         <Link
                                             to={`https://work.mma.go.kr/caisBYIS/search/cygonggogeomsaekView.do?cygonggo_no=${공고.공고번호}`}
-                                            style={{textDecoration: "none"}}
+                                            style={{textDecoration: "none", display: "flex", alignItems: "center"}}
                                             target="_blank"
                                         >
-                                            {공고.공고제목}
+                                            {공고.공고제목}<OpenInNew fontSize="inherit" />
                                         </Link>
                                     ) : text
-                                    const secondary = (
-                                        <Typography style={{whiteSpace: "pre-line"}}>
-                                            {content}
-                                        </Typography>
+                                    return (
+                                        <ListItem>
+                                            <ListItemIcon>{IconForThisEntry === undefined ? <Icon /> : <IconForThisEntry />}</ListItemIcon>
+                                            <ListItemText primary={availableEntry.join(" / ")} secondary={content} secondaryTypographyProps={{whiteSpace: "pre-line"}}/>
+                                        </ListItem>
                                     )
-                                    return (<ListItemText primary={availableEntry.join(" / ")} secondary={secondary} />)
                                 })}
                                 <ListItemButton onClick={() => setOpen(!open)}>
                                     <ExpandLess />
