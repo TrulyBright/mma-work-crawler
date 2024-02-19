@@ -1,4 +1,4 @@
-import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon } from "@mui/material"
+import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField } from "@mui/material"
 import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
 import 최종갱신 from "../../data/최종갱신.json"
@@ -45,6 +45,8 @@ const 단일공고단일필터검사 = (채용공고: Object, filter: Filter) =>
             return (filter.values as string[][]).some((v: string[]) => v.every(vv => 공고값.includes(vv)))
         return filter.values.every((v) => 공고값.includes(v)) // 복리후생.
     }
+    if (filter.entry === "업체명")
+        return new RegExp(filter.values[0] as string).test(공고값)
     return filter.values.includes(공고값)
 }
 
@@ -142,6 +144,17 @@ export default () => {
         <>
         <Paper>
         <List subheader={<ListSubheader>검색조건</ListSubheader>} disablePadding>
+            <ListItem>
+                <TextField label="업체명" fullWidth size="small" onChange={(e) => {
+                    const value = e.target.value
+                    setFilters((prev) => {
+                        const newFilters = prev.filter(filter => filter.entry !== "업체명")
+                        if (value === "") return newFilters
+                        newFilters.push({entry: "업체명", values: [value]})
+                        return newFilters
+                    })
+                }}/>
+            </ListItem>
             {주요검색순서.map((entry) => (
                 // @ts-expect-error
                 <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} icon={iconByFilter[entry]} />
