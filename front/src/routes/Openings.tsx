@@ -151,8 +151,7 @@ export default () => {
                     transform: expanded ? 'rotate(-180deg)' : 'rotate(0)',
                     transition: '0.2s',
                 }} />
-                <ListItemText primary="상세검색" secondary={상세검색순서.join(", ")} secondaryTypographyProps={{
-                    noWrap: true,
+                <ListItemText primary="상세검색" secondary={"최종학력, 교대근무, 자격증, ..."} secondaryTypographyProps={{
                     fontSize: 12,
                     lineHeight: '16px',
                 }} />
