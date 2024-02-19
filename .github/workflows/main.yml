@@ -13,8 +13,8 @@ jobs:
         with:
           path: requirements.txt
         env:
-          API_ENDPOINT: ${{ secrets.API_ENDPOINT }}
-          API_KEY: ${{ secrets.API_KEY }}
+          API_ENDPOINT: '${{ secrets.API_ENDPOINT }}'
+          API_KEY: '${{ secrets.API_KEY }}'
       - run: |
           git pull
           python fetch.py
