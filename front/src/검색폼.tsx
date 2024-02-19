@@ -1,10 +1,10 @@
-import { FormControl, FormLabel, Grid, FormControlLabel, Checkbox, ListItem, Icon } from "@mui/material"
+import { FormControl, FormLabel, Grid, FormControlLabel, Checkbox, ListItem } from "@mui/material"
 import postposition from "cox-postposition"
 import { Filter } from "./interfaces"
 import React from "react"
 
 export default (props: {entry: string, properties: (string | string[])[], filters: Filter[], setFilters: React.Dispatch<React.SetStateAction<Filter[]>>, icon: any}) => {
-    const { entry, properties, filters, setFilters, icon } = props
+    const { entry, properties, filters, setFilters } = props
     const Icon = props.icon
     const onCheck = (entry: string, value: string | string[]) => (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {

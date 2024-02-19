@@ -1,7 +1,7 @@
 name: Update mma data
 on:
   schedule:
-    - cron: 0 * * * *
+    - cron: 0 9,19 * * *
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -14,11 +14,11 @@ jobs:
           path: requirements.txt
       - run: |
           git pull
-          python updater.py
+          python fetch.py
           git config --global user.email "trulybright@yonsei.ac.kr"
           git config --global user.name "TrulyBright"
           git add -A
-          git commit -m "update data.json"
+          git commit -m "update data"
           git push
       - uses: Azure/static-web-apps-deploy@v1
         with:

@@ -1,7 +1,8 @@
-import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, Typography, ListItemIcon, Icon } from "@mui/material"
+import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon } from "@mui/material"
 import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
-import { AttachMoney, Badge, Bedtime, Business, Campaign, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, OpenInNew, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, Science, Translate, WorkHistory } from "@mui/icons-material"
+import 최종갱신 from "../../data/최종갱신.json"
+import { AttachMoney, Badge, Bedtime, Business, Campaign, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, OpenInNew, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, Translate } from "@mui/icons-material"
 import React from "react"
 import { Filter } from "../interfaces"
 import 검색폼 from "../검색폼"
@@ -35,6 +36,7 @@ const 상세검색순서 = [
 ]
 
 const 단일공고단일필터검사 = (채용공고: Object, filter: Filter) => {
+    // @ts-expect-error
     const 공고값 = 채용공고[filter.entry]
     if (공고값 === undefined) return true
     if (filter.values.length === 0) return true
@@ -119,6 +121,8 @@ const detailOrder = [
     ["홈페이지주소"]
 ]
 
+const min = (a: number, b: number) => a < b ? a : b
+
 export default () => {
     const [expanded, setExpanded] = React.useState(false)
     const [filters, setFilters] = React.useState<Filter[]>([])
@@ -131,11 +135,15 @@ export default () => {
             전체 공고 <strong>{채용공고목록.length}</strong>개 중 <strong>{visibleOpenings.length}</strong>개가 조건에 맞습니다.
         </ListSubheader>
     )
+    const eachLoadingUnit = 50
+    const [listSize, setListSize] = React.useState(eachLoadingUnit)
+    const [expandOpening, setExpandOpening] = React.useState({} as {[key: number]: boolean})
     return (
         <>
         <Paper>
-        <List subheader={<ListSubheader>검색조건</ListSubheader>}>
+        <List subheader={<ListSubheader>검색조건</ListSubheader>} disablePadding>
             {주요검색순서.map((entry) => (
+                // @ts-expect-error
                 <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} icon={iconByFilter[entry]} />
             ))}
             <ListItemButton onClick={() => setExpanded(!expanded)}>
@@ -151,6 +159,7 @@ export default () => {
             </ListItemButton>
             <Collapse in={expanded}>
                 {상세검색순서.map((entry) => (
+                    // @ts-expect-error
                     <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} icon={iconByFilter[entry]} />
                 ))}
                 <ListItemButton onClick={() => setExpanded(!expanded)}>
@@ -161,42 +170,49 @@ export default () => {
         </List>
         </Paper>
         <List subheader={resultSummary()} sx={{mt: 1}}>
-            {visibleOpenings.slice(0, 20).map(공고 => {
-                const [open, setOpen] = React.useState(false)
+            {visibleOpenings.slice(0, listSize).map(공고 => {
                 return (
                     <>
-                        <ListItemButton onClick={() => setOpen(!open)}>
+                        <ListItemButton onClick={() =>
+                            setExpandOpening((prev) => ({...prev, [공고.공고번호]: !prev[공고.공고번호]}))
+                        }>
+                            {/*@ts-expect-error*/}
                             <ListItemText primary={공고.공고제목} secondary={공고.업체명 + "·" + 공고.업종}/>
                             <ExpandMore sx={{
-                                transform: open ? 'rotate(-180deg)' : 'rotate(0)',
+                                transform: expandOpening[공고.공고번호] ? 'rotate(-180deg)' : 'rotate(0)',
                                 transition: '0.2s',
                             }} />
                         </ListItemButton>
-                        <Collapse in={open} unmountOnExit>
+                        <Collapse in={expandOpening[공고.공고번호]} unmountOnExit>
                             <List disablePadding dense sx={{pl: 4}}>
                                 {detailOrder.map(entryList => {
                                     const availableEntry = entryList.filter(entry => 공고.hasOwnProperty(entry))
                                     if (availableEntry.length === 0) return;
-                                    const IconForThisEntry = iconByFilter[availableEntry[0]]
+                                    const primary = availableEntry.join(" / ")
+                                    // @ts-expect-error
+                                    const Icon = iconByFilter[availableEntry[0]]
+                                    // @ts-expect-error
                                     const availableValue = availableEntry.map(entry => 공고[entry])
                                     const text = availableValue.join(" / ")
                                     const content = availableEntry.includes("공고번호") ? (
                                         <Link
+                                            // @ts-expect-error
                                             to={`https://work.mma.go.kr/caisBYIS/search/cygonggogeomsaekView.do?cygonggo_no=${공고.공고번호}`}
                                             style={{textDecoration: "none", display: "flex", alignItems: "center"}}
                                             target="_blank"
                                         >
+                                            {/*@ts-expect-error*/}
                                             {공고.공고제목}<OpenInNew fontSize="inherit" />
                                         </Link>
                                     ) : text
                                     return (
-                                        <ListItem>
-                                            <ListItemIcon>{IconForThisEntry === undefined ? <Icon /> : <IconForThisEntry />}</ListItemIcon>
-                                            <ListItemText primary={availableEntry.join(" / ")} secondary={content} secondaryTypographyProps={{whiteSpace: "pre-line"}}/>
+                                        <ListItem disablePadding>
+                                            {Icon !== undefined && <ListItemIcon><Icon /></ListItemIcon>}
+                                            <ListItemText inset={Icon === undefined} primary={primary} secondary={content} secondaryTypographyProps={{whiteSpace: "pre-line"}}/>
                                         </ListItem>
                                     )
                                 })}
-                                <ListItemButton onClick={() => setOpen(!open)}>
+                                <ListItemButton onClick={() => setExpandOpening((prev) => ({...prev, [공고.공고번호]: !prev[공고.공고번호]}))}>
                                     <ExpandLess />
                                     <ListItemText primary="상세정보 접기" />
                                 </ListItemButton>
@@ -205,6 +221,20 @@ export default () => {
                     </>
                 )
             })}
+            {listSize < visibleOpenings.length && <ListItemButton onClick={() => setListSize((prev) => prev + eachLoadingUnit)}>
+                <ExpandMore />
+                <ListItemText primary={`공고 ${min(visibleOpenings.length - listSize, eachLoadingUnit)}개 더보기 (${listSize} / ${visibleOpenings.length})`}/>
+            </ListItemButton>}
+            <ListItem>
+                <ListItemText primary={`최종갱신: ${new Date(최종갱신 * 1000).toLocaleDateString("ko-KR", {year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    weekday: "long",
+                    hour: "numeric",
+                    minute: "numeric",
+                    second: "numeric"
+                })}`}/>
+            </ListItem>
         </List>
         </>
     )

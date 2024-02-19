@@ -1,4 +1,5 @@
 import os
+import time
 import colorlog
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
@@ -129,10 +130,12 @@ def save(data: list[dict]):
     os.makedirs("front/data", exist_ok=True)
     with (
         open("front/data/채용공고목록.json", "w") as f,
-        open("front/data/속성풀.json", "w") as g
+        open("front/data/속성풀.json", "w") as g,
+        open("front/data/최종갱신.json", "w") as h
     ):
         json.dump(data, f, ensure_ascii=False)
         json.dump(fill_option_pool(data), g, ensure_ascii=False)
+        json.dump(time.time(), h)
 
 def setup_logging():
     handler = colorlog.StreamHandler()
