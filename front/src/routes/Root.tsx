@@ -34,12 +34,12 @@ const Root = () => {
                         <ListItemText primary="채용공고" />
                     </ListItemButton>
                 </ListItem>
-                <ListItem disablePadding component={RouterLink} to="/companies" sx={{color: "inherit"}}>
+                {/* <ListItem disablePadding component={RouterLink} to="/companies" sx={{color: "inherit"}}>
                     <ListItemButton>
                         <ListItemIcon><Business /></ListItemIcon>
                         <ListItemText primary="업체목록" />
                     </ListItemButton>
-                </ListItem>
+                </ListItem> */}
                 <ListItem disablePadding sx={{color: "inherit"}} onClick={colorMode.toggleColorMode}>
                     <ListItemButton>
                         <ListItemIcon>{theme.palette.mode === "dark" ? <LightMode /> : <DarkMode />}</ListItemIcon>
@@ -68,7 +68,7 @@ const Root = () => {
                     <IconButton color="inherit" aria-label="사이드바 열기" edge="start" onClick={handleDrawerToggle} sx={{mr: 2, display: {sm: "none"}}}>
                         <Menu />
                     </IconButton>
-                    <Link variant="h6" color="inherit" underline="none" href="/" noWrap>병역일터 공고검색/업체검색</Link>
+                    <Link variant="h6" color="inherit" underline="none" href="/" noWrap>병역일터 공고검색</Link>
                 </Toolbar>
             </AppBar>
             <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }} aria-label="링크 목록">
