@@ -173,15 +173,18 @@ export default () => {
                 return (
                     <>
                         <ListItemButton onClick={() =>
+                            // @ts-expect-error
                             setExpandOpening((prev) => ({...prev, [공고.공고번호]: !prev[공고.공고번호]}))
                         }>
                             {/*@ts-expect-error*/}
                             <ListItemText primary={공고.공고제목} secondary={공고.업체명 + "·" + 공고.업종}/>
                             <ExpandMore sx={{
+                                // @ts-expect-error
                                 transform: expandOpening[공고.공고번호] ? 'rotate(-180deg)' : 'rotate(0)',
                                 transition: '0.2s',
                             }} />
                         </ListItemButton>
+                        {/*@ts-expect-error*/}
                         <Collapse in={expandOpening[공고.공고번호]} unmountOnExit>
                             <List disablePadding dense sx={{pl: 4}}>
                                 {detailOrder.map(entryList => {
@@ -211,6 +214,7 @@ export default () => {
                                         </ListItem>
                                     )
                                 })}
+                                {/*@ts-expect-error*/}
                                 <ListItemButton onClick={() => setExpandOpening((prev) => ({...prev, [공고.공고번호]: !prev[공고.공고번호]}))}>
                                     <ExpandLess />
                                     <ListItemText primary="상세정보 접기" />

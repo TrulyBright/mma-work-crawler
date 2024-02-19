@@ -1,6 +1,6 @@
 import React from "react"
 import { AppBar, Box, CssBaseline, Divider, Drawer, IconButton, Link, List, ListItem, ListItemButton, ListItemIcon, ListItemText, ThemeProvider, Toolbar, createTheme, useTheme } from "@mui/material"
-import { Business, DarkMode, GitHub, LightMode, ManageSearch, Menu } from '@mui/icons-material'
+import { DarkMode, GitHub, LightMode, ManageSearch, Menu } from '@mui/icons-material'
 import { Outlet, Link as RouterLink } from "react-router-dom"
 
 const drawerWidth = 240
