@@ -8,7 +8,6 @@ import {
 import Root from './routes/Root'
 import Openings from './routes/Openings'
 import Companies from './routes/Companies'
-import './base.css'
 import ErrorPage from './ErrorPage'
 
 const router = createBrowserRouter([
