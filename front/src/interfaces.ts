@@ -1,4 +1,4 @@
 export interface Filter {
     entry: string
-    values: (string | string[])[]
+    values: (boolean | string | string[])[]
 }

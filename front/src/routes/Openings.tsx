@@ -1,8 +1,8 @@
-import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField } from "@mui/material"
+import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField, IconButton, Checkbox, FormControl, FormControlLabel, FormLabel } from "@mui/material"
 import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
 import 최종갱신 from "../../data/최종갱신.json"
-import { AttachMoney, Badge, Bedtime, Business, Campaign, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, OpenInNew, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, Translate } from "@mui/icons-material"
+import { AttachMoney, Badge, Bedtime, Business, Campaign, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, OpenInNew, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, Star, StarBorder, Translate } from "@mui/icons-material"
 import React from "react"
 import { Filter } from "../interfaces"
 import 검색폼 from "../검색폼"
@@ -14,7 +14,7 @@ const 주요검색순서 = [
     "업종",
     "급여",
     "전직자 채용가능",
-    "주소"
+    "주소",
 ]
 
 const 상세검색순서 = [
@@ -35,11 +35,14 @@ const 상세검색순서 = [
     "퇴직금지급",
 ]
 
-const 단일공고단일필터검사 = (채용공고: Object, filter: Filter) => {
+const 단일공고단일필터검사 = (채용공고: Object, filter: Filter, 즐겨찾기: {[key: number]: boolean}) => {
+    if (filter.values.length === 0) return true
+    if (filter.entry === "즐겨찾기")
+        // @ts-expect-error
+        return filter.values.includes(즐겨찾기[채용공고.공고번호] || false)
     // @ts-expect-error
     const 공고값 = 채용공고[filter.entry]
     if (공고값 === undefined) return true
-    if (filter.values.length === 0) return true
     if (공고값 instanceof Array) {
         if (filter.entry === "주소")
             return (filter.values as string[][]).some((v: string[]) => v.every(vv => 공고값.includes(vv)))
@@ -50,12 +53,12 @@ const 단일공고단일필터검사 = (채용공고: Object, filter: Filter) =>
     return filter.values.includes(공고값)
 }
 
-const 단일공고다중필터검사 = (채용공고: Object, filters: Filter[]) => {
-    return filters.every((filter) => 단일공고단일필터검사(채용공고, filter))
+const 단일공고다중필터검사 = (채용공고: Object, filters: Filter[], 즐겨찾기: {[key: number]: boolean}) => {
+    return filters.every((filter) => 단일공고단일필터검사(채용공고, filter, 즐겨찾기))
 }
 
-const 복수공고다중필터검사 = (채용공고목록: Object[], filters: Filter[]) => {
-    return 채용공고목록.filter((채용공고) => 단일공고다중필터검사(채용공고, filters))
+const 복수공고다중필터검사 = (채용공고목록: Object[], filters: Filter[], 즐겨찾기: {[key: number]: boolean}) => {
+    return 채용공고목록.filter((채용공고) => 단일공고다중필터검사(채용공고, filters, 즐겨찾기))
 }
 
 const iconByFilter = {
@@ -98,7 +101,8 @@ const iconByFilter = {
     전공: HistoryEdu,
     외국어: Translate,
     외국어구사능력: FormatListNumbered,
-    홈페이지주소: Home
+    홈페이지주소: Home,
+    즐겨찾기: Star,
 }
 
 const detailOrder = [
@@ -128,8 +132,25 @@ const min = (a: number, b: number) => a < b ? a : b
 export default () => {
     const [expanded, setExpanded] = React.useState(false)
     const [filters, setFilters] = React.useState<Filter[]>([])
+    const [즐겨찾기, set즐겨찾기] = React.useState({} as {[key: number]: boolean})
+    React.useEffect(() => {
+        const items = JSON.parse(localStorage.getItem("즐겨찾기") || "{}")
+        set즐겨찾기(items)
+    }, [])
+    // Strict모드에서 dev server 사용 시 새로고침할 때마다 즐겨찾기가 초기화되는 문제가 있음.
+    React.useEffect(() => {
+        localStorage.setItem("즐겨찾기", JSON.stringify(즐겨찾기))
+    }, [즐겨찾기])
+    const 즐찾변경 = (공고번호: number) => {
+        set즐겨찾기((prev) => {
+            const new즐겨찾기 = {...prev}
+            if (new즐겨찾기[공고번호]) delete new즐겨찾기[공고번호]
+            else new즐겨찾기[공고번호] = true
+            return new즐겨찾기
+        })
+    }
     const visibleOpenings = React.useMemo(
-        () => 복수공고다중필터검사(채용공고목록, filters),
+        () => 복수공고다중필터검사(채용공고목록, filters, 즐겨찾기),
         [filters]
     )
     const resultSummary = () => (
@@ -159,6 +180,22 @@ export default () => {
                 // @ts-expect-error
                 <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} icon={iconByFilter[entry]} />
             ))}
+            <ListItem>
+                <FormControl component="fieldset" sx={{display: "flex", flexDirection: "row", alignItems: "start", width: 1}}>
+                    <FormLabel component="legend" sx={{display: "flex", justifyContent: "center", gap: 1}}><Star /><strong>즐겨찾기</strong></FormLabel>
+                    {[true, false].map(v => (<FormControlLabel control={<Checkbox size="small" onChange={(e) => {
+                        const checked = e.target.checked
+                        setFilters((prev) => {
+                            const f = prev.find(filter => filter.entry === "즐겨찾기")
+                            if (f) {
+                                if (checked) f.values.push(v)
+                                else f.values = f.values.filter(existing => existing !== v)
+                                return [...prev.filter(filter => filter.entry !== "즐겨찾기"), f]
+                            } else return [...prev, {entry: "즐겨찾기", values: [v]}]
+                        })
+                    }} />} label={v ? "즐겨찾는 공고" : "즐겨찾지 않는 공고"} />))}
+                </FormControl>
+            </ListItem>
             <ListItemButton onClick={() => setExpanded(!expanded)}>
                 <ExpandMore sx={{
                     transform: expanded ? 'rotate(-180deg)' : 'rotate(0)',
@@ -185,18 +222,25 @@ export default () => {
             {visibleOpenings.slice(0, listSize).map(공고 => {
                 return (
                     <>
-                        <ListItemButton onClick={() =>
-                            // @ts-expect-error
-                            setExpandOpening((prev) => ({...prev, [공고.공고번호]: !prev[공고.공고번호]}))
-                        }>
+                        <ListItem disablePadding dense>
                             {/*@ts-expect-error*/}
-                            <ListItemText primary={공고.공고제목} secondary={공고.업체명 + "·" + 공고.업종}/>
-                            <ExpandMore sx={{
+                            <IconButton onClick={() => 즐찾변경(공고.공고번호)}>
+                                {/*@ts-expect-error*/}
+                                {즐겨찾기[공고.공고번호] ? <Star fontSize="small"/> : <StarBorder fontSize="small"/>}
+                            </IconButton>
+                            <ListItemButton onClick={() =>
                                 // @ts-expect-error
-                                transform: expandOpening[공고.공고번호] ? 'rotate(-180deg)' : 'rotate(0)',
-                                transition: '0.2s',
-                            }} />
-                        </ListItemButton>
+                                setExpandOpening((prev) => ({...prev, [공고.공고번호]: !prev[공고.공고번호]}))
+                            }>
+                                {/*@ts-expect-error*/}
+                                <ListItemText primary={공고.공고제목} secondary={공고.업체명 + "·" + 공고.업종}/>
+                                <ExpandMore sx={{
+                                    // @ts-expect-error
+                                    transform: expandOpening[공고.공고번호] ? 'rotate(-180deg)' : 'rotate(0)',
+                                    transition: '0.2s',
+                                }} />
+                            </ListItemButton>
+                        </ListItem>
                         {/*@ts-expect-error*/}
                         <Collapse in={expandOpening[공고.공고번호]} unmountOnExit>
                             <List disablePadding dense sx={{pl: 4}}>
