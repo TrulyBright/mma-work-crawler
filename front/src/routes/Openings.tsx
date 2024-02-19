@@ -229,7 +229,7 @@ export default () => {
                 <ListItemText primary={`공고 ${min(visibleOpenings.length - listSize, eachLoadingUnit)}개 더보기 (${listSize} / ${visibleOpenings.length})`}/>
             </ListItemButton>}
             <ListItem>
-                <ListItemText primary={`최종갱신: ${new Date(최종갱신 * 1000).toLocaleDateString("ko-KR", {year: "numeric",
+                <ListItemText secondary={`최종갱신: ${new Date(최종갱신 * 1000).toLocaleDateString("ko-KR", {year: "numeric",
                     month: "short",
                     day: "numeric",
                     weekday: "long",
