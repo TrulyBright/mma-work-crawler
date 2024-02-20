@@ -1,4 +1,5 @@
 import os
+import traceback
 import time
 import colorlog
 from tqdm import tqdm
@@ -50,7 +51,12 @@ async def scrap_extra_info(data: list[dict]):
     async def scrap(공고번호: int, client: httpx.AsyncClient):
         return await client.get(URI, params={"cygonggo_no": 공고번호}, timeout=None)
     async with httpx.AsyncClient() as client:
-        return await tqdm_asyncio.gather(*[scrap(item["공고번호"], client) for item in data])
+        while True:
+            try:
+                return await tqdm_asyncio.gather(*[scrap(item["공고번호"], client) for item in data])
+            except:
+                logger.error("스크랩에 실패했습니다. 재시도합니다.")
+                logger.error(traceback.format_exc())
 
 def parse_extra_info(data: list[httpx.Response]):
     """스크랩한 데이터를 파싱한다."""
