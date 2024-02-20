@@ -252,7 +252,7 @@ export default () => {
                                     const Icon = iconByFilter[availableEntry[0]]
                                     // @ts-expect-error
                                     const availableValue = availableEntry.map(entry => 공고[entry])
-                                    const text = availableValue.join(" / ")
+                                    const text = availableValue.map(v => primary === "주소" ? v.join(" ") : v).join(" / ")
                                     const content = availableEntry.includes("공고번호") ? (
                                         <Link
                                             // @ts-expect-error
