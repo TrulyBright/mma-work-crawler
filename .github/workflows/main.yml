@@ -1,5 +1,8 @@
 name: Update mma data
 on:
+  push:
+    branches:
+      - master
   schedule:
     - cron: 0 9,19 * * *
 jobs:
@@ -13,9 +16,11 @@ jobs:
         with:
           path: requirements.txt
         env:
-          API_ENDPOINT: '${{ secrets.API_ENDPOINT }}'
-          API_KEY: '${{ secrets.API_KEY }}'
+          API_ENDPOINT: ${{ secrets.API_ENDPOINT }}
+          API_KEY: ${{ secrets.API_KEY }}
       - run: |
+          export API_ENDPOINT=${{ secrets.API_ENDPOINT }}
+          export API_KEY=${{ secrets.API_KEY }}
           git pull
           python fetch.py
           git config --global user.email "trulybright@yonsei.ac.kr"
