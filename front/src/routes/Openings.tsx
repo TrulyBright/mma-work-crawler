@@ -1,4 +1,4 @@
-import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField, IconButton, Checkbox, FormControl, FormControlLabel, FormLabel } from "@mui/material"
+import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField, IconButton, Checkbox, FormControl, FormControlLabel, FormLabel, Tooltip, Button } from "@mui/material"
 import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
 import 최종갱신 from "../../data/최종갱신.json"
@@ -155,7 +155,7 @@ export default () => {
     )
     const resultSummary = () => (
         <ListSubheader>
-            전체 공고 <strong>{채용공고목록.length}</strong>개 중 <strong>{visibleOpenings.length}</strong>개가 조건에 맞습니다.
+            전체 공고 <strong>{채용공고목록.length}</strong>개 중 <strong>{visibleOpenings.length}</strong>개가 <Tooltip title={filters.filter(f => f.values.length !== 0).map(f => `${f.entry}: ${f.values.map(v => f.entry === "주소" ? v.join(' ') : v).join(', ')}`).join('\n') || "선택된 조건이 없습니다."}><Button variant="contained" sx={{py: 0, px: 1, minWidth: 0}}>조건</Button></Tooltip>에 맞습니다.
         </ListSubheader>
     )
     const eachLoadingUnit = 50
