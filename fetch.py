@@ -49,14 +49,14 @@ async def scrap_extra_info(data: list[dict]):
     logger.info("Scraping extra info...")
     URI = "https://work.mma.go.kr/caisBYIS/search/cygonggogeomsaekView.do"
     async def scrap(공고번호: int, client: httpx.AsyncClient):
-        return await client.get(URI, params={"cygonggo_no": 공고번호}, timeout=None)
-    async with httpx.AsyncClient() as client:
         while True:
             try:
-                return await tqdm_asyncio.gather(*[scrap(item["공고번호"], client) for item in data])
+                return await client.get(URI, params={"cygonggo_no": 공고번호}, timeout=None)
             except:
-                logger.error("스크랩에 실패했습니다. 재시도합니다.")
+                logger.error(f"스크랩에 실패했습니다(공고번호: {공고번호}). 재시도합니다.")
                 logger.error(traceback.format_exc())
+    async with httpx.AsyncClient() as client:
+        return await tqdm_asyncio.gather(*[scrap(item["공고번호"], client) for item in data])
 
 def parse_extra_info(data: list[httpx.Response]):
     """스크랩한 데이터를 파싱한다."""
