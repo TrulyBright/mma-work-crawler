@@ -135,10 +135,14 @@ def save(data: list[dict]):
     logger.info("Saving data & pool...")
     os.makedirs("front/data", exist_ok=True)
     with (
-        open("front/data/채용공고목록.json", "w") as f,
+        open("front/data/채용공고목록.json", "r+") as f,
         open("front/data/속성풀.json", "w") as g,
         open("front/data/최종갱신.json", "w") as h
     ):
+        read = json.load(f)
+        if read == data:
+            logger.info("데이터가 갱신되지 않았습니다.")
+            return
         json.dump(data, f, ensure_ascii=False)
         json.dump(fill_option_pool(data), g, ensure_ascii=False)
         json.dump(time.time(), h)
