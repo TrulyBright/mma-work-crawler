@@ -103,7 +103,7 @@ const iconByFilter = {
     외국어구사능력: FormatListNumbered,
     홈페이지주소: Home,
     즐겨찾기: Star,
-}
+} as const
 
 const detailOrder = [
     ["공고제목", "공고번호"],
@@ -119,13 +119,14 @@ const detailOrder = [
     ["외국어", "외국어구사능력"],
     ["출퇴근시간", "교대근무", "특근·잔업"],
     ["급여", "식사(비)지급", "퇴직금지급"],
+    ["복리후생"],
     ["현역배정인원", "현역편입인원"],
     ["보충역배정인원", "보충역편입인원"],
     ["비고"],
     ["수습기간"],
     ["접수방법"],
     ["홈페이지주소"]
-]
+] as const
 
 const min = (a: number, b: number) => a < b ? a : b
 
@@ -252,7 +253,7 @@ export default () => {
                                     const Icon = iconByFilter[availableEntry[0]]
                                     // @ts-expect-error
                                     const availableValue = availableEntry.map(entry => 공고[entry])
-                                    const text = availableValue.map(v => primary === "주소" ? v.join(" ") : v).join(" / ")
+                                    const text = availableValue.map(v => ["주소", "복리후생"].includes(primary) ? v.join(primary === "주소" ? " " : ", ") : v).join(" / ")
                                     const content = availableEntry.includes("공고번호") ? (
                                         <Link
                                             // @ts-expect-error
