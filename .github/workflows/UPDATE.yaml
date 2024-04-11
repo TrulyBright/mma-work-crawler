@@ -25,19 +25,21 @@ jobs:
                 export API_KEY=${{ secrets.API_KEY }}
                 python fetch.py
                 if [ $(git diff) ]; then
+                    echo update needed
                     git config --global user.email "trulybright@yonsei.ac.kr"
                     git config --global user.name "TrulyBright"
                     git add -A
                     git commit -m "update data"
                     git push
-                    echo "::set-output name=diff::true"
+                    echo "diff=true" >> "$GITHUB_OUTPUT"
                 else
-                    echo "::set-output name=diff::false"
+                    echo "No update needed"
+                    echo "diff=false" >> "$GITHUB_OUTPUT"                  
                 fi
 
     Deploy-to-the-Azure-SWA:
         needs: update-mma-data
-        if: ${{needs.update-mma-data.outputs.diff}} == 'true'
+        if: ${{ needs.update-mma-data.outputs.diff == 'true' }}
         runs-on: ubuntu-latest
         steps:
             - name: Verify
