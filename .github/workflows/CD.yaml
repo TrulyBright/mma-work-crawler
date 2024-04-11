@@ -33,16 +33,17 @@ jobs:
                 export API_ENDPOINT=${{ secrets.API_ENDPOINT }}
                 export API_KEY=${{ secrets.API_KEY }}
                 python fetch.py
-                if [[ git diff --quiet ]]; then
+                if [[ $(git diff) ]]; then
+                  git config --global user.email "trulybright@yonsei.ac.kr"
+                  git config --global user.name "TrulyBright"
+                  git add -A
+                  git commit -m "update data"
+                  git push
+                else
                     echo "No changes"
                     gh run cancel ${{ github.run_id }}
                     gh run watch ${{ github.run_id }}
                 fi
-                git config --global user.email "trulybright@yonsei.ac.kr"
-                git config --global user.name "TrulyBright"
-                git add -A
-                git commit -m "update data"
-                git push
             - name: Deploy to the Azure SWA
               uses: Azure/static-web-apps-deploy@v1
               env:
