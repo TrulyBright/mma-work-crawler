@@ -8,8 +8,6 @@ on:
         types: [opened, synchronize, reopened, closed]
         branches:
             - main
-    schedule:
-        - cron: 0 * * * *
 
 jobs:
     update:
