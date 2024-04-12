@@ -24,7 +24,7 @@ jobs:
                 export API_ENDPOINT=${{ secrets.API_ENDPOINT }}
                 export API_KEY=${{ secrets.API_KEY }}
                 python fetch.py
-                if [ $(git diff) ]; then
+                if [[ $(git diff) ]]; then
                     echo update needed
                     git config --global user.email "trulybright@yonsei.ac.kr"
                     git config --global user.name "TrulyBright"
