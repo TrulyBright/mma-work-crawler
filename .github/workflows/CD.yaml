@@ -12,6 +12,9 @@ on:
 jobs:
     update:
         runs-on: ubuntu-latest
+        env:
+            GITHUB_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
+            GIST_ID: ${{ secrets.GIST_ID }}
         steps:
             - uses: actions/checkout@v4
             - name: Deploy to the Azure SWA

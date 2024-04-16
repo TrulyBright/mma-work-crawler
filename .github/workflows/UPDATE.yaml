@@ -5,6 +5,11 @@ on:
 jobs:
     Deploy-to-the-Azure-SWA:
         runs-on: ubuntu-latest
+        env:
+            API_ENDPOINT: ${{ secrets.API_ENDPOINT }}
+            API_KEY: ${{ secrets.API_KEY }}
+            GITHUB_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
+            GIST_ID: ${{ secrets.GIST_ID }}
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-node@v4
@@ -16,10 +21,6 @@ jobs:
             - run: |
                 python -m pip install --upgrade pip
                 pip install -r requirements.txt
-                export API_ENDPOINT=${{ secrets.API_ENDPOINT }}
-                export API_KEY=${{ secrets.API_KEY }}
-                export GITHUB_TOKEN=${{ secrets.GIST_ACCESS_TOKEN }}
-                export GIST_ID=${{ secrets.GIST_ID }}
                 python fetch.py
             - uses: Azure/static-web-apps-deploy@v1
               env:
