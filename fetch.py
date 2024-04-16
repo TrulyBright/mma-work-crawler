@@ -14,14 +14,6 @@ import requests
 
 logger = logging.getLogger("fetch.py")
 
-def get_api_endpoint():
-    logger.info("Getting API endpoint...")
-    return os.environ["API_ENDPOINT"]
-
-def get_api_key():
-    logger.info("Getting API key...")
-    return os.environ["API_KEY"]
-
 def fetch(endpoint: str, key: str):
     logger.info("Fetching data...")
     return requests.get(endpoint, {
@@ -131,25 +123,34 @@ def fill_option_pool(data: list[dict]):
                 pools[key].remove("")
     return {key: sorted(value) for key, value in pools.items() if value}
 
-def save(data: list[dict]):
-    logger.info("Saving data & pool...")
-    os.makedirs("front/data", exist_ok=True)
-    with open("front/data/채용공고목록.json", "r") as f:
-        try:
-            read = json.load(f)
-        except:
-            read = []
-    if read == data:
-        logger.info("데이터가 갱신되지 않았습니다.")
-        return
-    with (
-        open("front/data/채용공고목록.json", "w") as f,
-        open("front/data/속성풀.json", "w") as g,
-        open("front/data/최종갱신.json", "w") as h
-    ):
-        json.dump(data, f, ensure_ascii=False)
-        json.dump(fill_option_pool(data), g, ensure_ascii=False)
-        json.dump(time.time(), h)
+def update_gist(data: list[dict], token: str, gist_id: str):
+    logging.info("Fetching Gist...")
+    with httpx.Client() as client:
+        client.headers["Accept"] = "application/vnd.github+json"
+        client.headers["X-GitHub-Api-Version"] = "2022-11-28"
+        res = client.get(f"https://api.github.com/gists/{gist_id}")
+        res.raise_for_status()
+        gist = res.json()
+        채용공고목록raw_url = gist["files"]["채용공고목록.json"]["raw_url"]
+        속성풀raw_url = gist["files"]["속성풀.json"]["raw_url"]
+        채용공고목록 = client.get(채용공고목록raw_url).json()
+        속성풀 = client.get(속성풀raw_url).json()
+        if 채용공고목록 == data and 속성풀 == fill_option_pool(data):
+            logging.info("No difference found.")
+            return
+        logger.info("Difference found. Updating...")
+        client.headers["Authorization"] = f"Bearer {token}"
+        res = client.patch(f"https://api.github.com/gists/{gist_id}", json={
+            "files": {
+                "채용공고목록.json": {
+                    "content": json.dumps(data, ensure_ascii=False)
+                },
+                "속성풀.json": {
+                    "content": json.dumps(fill_option_pool(data), ensure_ascii=False)
+                }
+            }
+        })
+        res.raise_for_status()
 
 def setup_logging():
     handler = colorlog.StreamHandler()
@@ -159,8 +160,10 @@ def setup_logging():
 
 def run():
     setup_logging()
-    endpoint = get_api_endpoint()
-    key = get_api_key()
+    endpoint = os.environ["API_ENDPOINT"]
+    key = os.environ["API_KEY"]
+    token = os.environ["GITHUB_TOKEN"]
+    gist_id = os.environ["GIST_ID"]
     data = fetch(endpoint, key)
     parsed = parse(data)
     translated = translate(parsed)
@@ -173,7 +176,7 @@ def run():
             item.clear()
     excluding_closed = [item for item in translated if item]
     seperated = seperate(excluding_closed)
-    save(seperated)
+    update_gist(seperated, token, gist_id)
 
 if __name__ == "__main__":
     run()

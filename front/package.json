@@ -8,8 +8,10 @@
   },
   "type": "module",
   "scripts": {
+    "update-data": "node update-data.js",
     "dev": "vite",
     "build": "tsc && vite build",
+    "build-with-data": "pnpm run update-data && pnpm run build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -37,6 +39,7 @@
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "octokit": "^3.2.0",
     "typescript": "^5.3.3",
     "vite": "^5.1.1"
   }
