@@ -1,4 +1,4 @@
-import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField, IconButton, Checkbox, FormControl, FormControlLabel, FormLabel, Tooltip, Button } from "@mui/material"
+import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField, IconButton, Checkbox, FormControl, FormControlLabel, FormLabel, Tooltip, Button, CircularProgress } from "@mui/material"
 import 채용공고목록 from "../../data/채용공고목록.json"
 import 속성풀 from "../../data/속성풀.json"
 import 최종갱신 from "../../data/최종갱신.json"
@@ -134,14 +134,41 @@ export default () => {
     const [expanded, setExpanded] = React.useState(false)
     const [filters, setFilters] = React.useState<Filter[]>([])
     const [즐겨찾기, set즐겨찾기] = React.useState({} as {[key: number]: boolean})
+    const [expandOpening, setExpandOpening] = React.useState({} as {[key: number]: boolean})
+    const [listSize, setListSize] = React.useState(50)
     React.useEffect(() => {
         const items = JSON.parse(localStorage.getItem("즐겨찾기") || "{}")
         set즐겨찾기(items)
     }, [])
-    // Strict모드에서 dev server 사용 시 새로고침할 때마다 즐겨찾기가 초기화되는 문제가 있음.
+    // BUG: Strict모드에서 dev server 사용 시 새로고침할 때마다 즐겨찾기가 초기화되는 문제가 있음.
     React.useEffect(() => {
         localStorage.setItem("즐겨찾기", JSON.stringify(즐겨찾기))
     }, [즐겨찾기])
+    const [rendered, setRendered] = React.useState((<>
+        <CircularProgress />
+        <p>불러오는 중입니다...</p>
+    </>))
+    React.useEffect(() => {
+        openings(
+            expanded, setExpanded,
+            filters, setFilters,
+            즐겨찾기, set즐겨찾기,
+            expandOpening, setExpandOpening,
+            listSize, setListSize
+        ).then(setRendered)
+    }, [expanded, filters, 즐겨찾기, expandOpening, listSize])
+
+    return rendered
+}
+
+const openings = async (
+    expanded: boolean, setExpanded: React.Dispatch<React.SetStateAction<boolean>>,
+    filters: Filter[], setFilters: React.Dispatch<React.SetStateAction<Filter[]>>,
+    즐겨찾기: {[key: number]: boolean}, set즐겨찾기: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>,
+    expandOpening: {[key: number]: boolean}, setExpandOpening: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>,
+    listSize: number, setListSize: React.Dispatch<React.SetStateAction<number>>,
+) => {
+    const visibleOpenings = 복수공고다중필터검사(채용공고목록, filters, 즐겨찾기)
     const 즐찾변경 = (공고번호: number) => {
         set즐겨찾기((prev) => {
             const new즐겨찾기 = {...prev}
@@ -150,18 +177,12 @@ export default () => {
             return new즐겨찾기
         })
     }
-    const visibleOpenings = React.useMemo(
-        () => 복수공고다중필터검사(채용공고목록, filters, 즐겨찾기),
-        [filters]
-    )
     const resultSummary = () => (
         <ListSubheader>
             전체 공고 <strong>{채용공고목록.length}</strong>개 중 <strong>{visibleOpenings.length}</strong>개가 <Tooltip title={filters.filter(f => f.values.length !== 0).map(f => `${f.entry}: ${f.values.map(v => f.entry === "주소" ? (v as string[]).join(' ') : v).join(', ')}`).join('\n') || "선택된 조건이 없습니다."}><Button variant="contained" sx={{py: 0, px: 1, minWidth: 0}}>조건</Button></Tooltip>에 맞습니다.
         </ListSubheader>
     )
     const eachLoadingUnit = 50
-    const [listSize, setListSize] = React.useState(eachLoadingUnit)
-    const [expandOpening, setExpandOpening] = React.useState({} as {[key: number]: boolean})
     return (
         <>
         <Paper>
