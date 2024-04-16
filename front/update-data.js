@@ -19,4 +19,4 @@ const 속성풀 = await fetch(속성풀raw).then(res => res.text())
 
 fs.writeFileSync('data/채용공고목록.json', 채용공고목록)
 fs.writeFileSync('data/속성풀.json', 속성풀)
-fs.writeFileSync('data/최종갱신.json', res.data.updated_at)
+fs.writeFileSync('data/최종갱신.json', JSON.stringify(res.data.updated_at))
