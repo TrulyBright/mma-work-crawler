@@ -43,8 +43,6 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
             - name: Verify
               run: |
                 diff=${{ needs.update-mma-data.outputs.diff }}
@@ -55,6 +53,9 @@ jobs:
                     echo "No changes to deploy."
                     exit 1
                 fi
+            - uses: actions/setup-node@v4
+              with:
+                node-version: '20'
             - uses: Azure/static-web-apps-deploy@v1
               env:
                 PRE_BUILD_COMMAND: npm install -g pnpm
