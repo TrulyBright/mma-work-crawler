@@ -47,4 +47,4 @@ So it sends the entire DB to the frontend. The client performs search and retrie
     - A. [Azure SWA](https://azure.microsoft.com/en-us/products/app-service/static) hosts it. It deploys whenever `채용공고목록.json` changes.
 
 - Q. Why are there so many commits?
-    - A. Long ago, the github action committed and pushed `채용공고목록.json` to this repository once an hour. The repository then ran CD on the on:push event to update the frontend. It had three problems: logic and data are not separated; my Github profile commit count increases meaninglessly; the hiring manager won't like it. I ended up using github Gist, managing the logic in the repository and the data in the Gist.
+    - A. Long ago, the github action committed and pushed `채용공고목록.json` to this repository once an hour. The repository then ran CD on the on:push event to update the frontend. It had three problems: logic and data are not separated; my Github profile commit count increases meaninglessly; employers won't like it. I ended up using github Gist, managing the logic in the repository and the data in the Gist.
