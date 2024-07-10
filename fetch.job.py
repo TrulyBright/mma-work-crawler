@@ -103,7 +103,7 @@ def fill_option_pool(data: list[dict]):
         else sorted(value)
         for key, value in pools.items()
     }
-    return {key:value for key, value in pools.items if value}
+    return {key:value for key, value in pools.items() if value}
 
 def update_gist(data: list[dict], token: str, gist_id: str):
     logging.info("Fetching Gist...")
