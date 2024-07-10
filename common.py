@@ -3,9 +3,10 @@ import logging
 import colorlog
 import requests
 import xml.etree.ElementTree as ET
+import httpx
 
 def fetch(endpoint: str, key: str):
-    return requests.get(endpoint, {
+    return httpx.get(endpoint, params={
         "numOfRows": 10000,
         "pageNo": 1,
         "ServiceKey": key
