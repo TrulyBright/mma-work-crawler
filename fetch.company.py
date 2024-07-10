@@ -40,6 +40,7 @@ def update_gist(data: list[dict], token: str, gist_id: str):
             logger.info("No update needed.")
             return
         logger.info("Difference found. Updating...")
+        client.headers["Authorization"] = f"Bearer {token}"
         res = client.patch(f"https://api.github.com/gists/{gist_id}", json={
             "files": {
                 "병역지정업체목록.json": {
