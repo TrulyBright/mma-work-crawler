@@ -1,40 +1,16 @@
 import os
 import traceback
-import time
-import colorlog
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
 import bs4
 import httpx
 import asyncio
 import json
-import xml.etree.ElementTree as ET
 import logging
-import requests
+import re
+from common import fetch, parse, setup_logging, translate
 
 logger = logging.getLogger("fetch.py")
-
-def fetch(endpoint: str, key: str):
-    logger.info("Fetching data...")
-    return requests.get(endpoint, {
-        "numOfRows": 10000,
-        "pageNo": 1,
-        "ServiceKey": key
-    }).content.decode()
-
-def parse(data: str):
-    logger.info("Parsing data...")
-    parsed = ET.fromstring(data)
-    resultcode = parsed.find("header").find("resultCode").text
-    if resultcode != "00":
-        raise Exception(f"API Error. resultCode: {resultcode}")
-    return [{tag.tag: tag.text for tag in item} for item in parsed.iter("item")]
-
-def translate(data: list[dict]):
-    logger.info("Translating data...")
-    with open("postprocessdata.json") as f:
-        translation = json.load(f)["국문명"]
-    return [{translation[key]: value for key, value in item.items()} for item in data]
 
 async def scrap_extra_info(data: list[dict]):
     """API로 조회되지 않는 정보는 사이트를 직접 스크랩해서 가져온다."""
@@ -121,7 +97,13 @@ def fill_option_pool(data: list[dict]):
                 pools[key].add(value)
             if "" in pools[key]:
                 pools[key].remove("")
-    return {key: sorted(value) for key, value in pools.items() if value}
+    pools = {
+        key: sorted(value, key=lambda x: re.match(r'~.+만원$', x).group(0)[1:], reverse=True)
+        if key == "급여"
+        else sorted(value)
+        for key, value in pools.items()
+    }
+    return {key:value for key, value in pools.items if value}
 
 def update_gist(data: list[dict], token: str, gist_id: str):
     logging.info("Fetching Gist...")
@@ -152,21 +134,17 @@ def update_gist(data: list[dict], token: str, gist_id: str):
         })
         res.raise_for_status()
 
-def setup_logging():
-    handler = colorlog.StreamHandler()
-    handler.setFormatter(colorlog.ColoredFormatter("%(log_color)s%(levelname)s:%(name)s:%(message)s"))
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
-
 def run():
-    setup_logging()
-    endpoint = os.environ["API_ENDPOINT"]
+    setup_logging(logger)
+    endpoint = os.environ["API_ENDPOINT_JOB"]
     key = os.environ["API_KEY"]
     token = os.environ["GITHUB_TOKEN"]
     gist_id = os.environ["GIST_ID"]
+    logger.info("Fetching data...")
     data = fetch(endpoint, key)
+    logger.info("Parsing data...")
     parsed = parse(data)
-    translated = translate(parsed)
+    translated = translate(parsed, "korean.job.json")
     extra_info = asyncio.run(scrap_extra_info(translated))
     parsed_extra_info = parse_extra_info(extra_info)
     for item, extra in zip(translated, parsed_extra_info, strict=True):
@@ -176,7 +154,10 @@ def run():
             item.clear()
     excluding_closed = [item for item in translated if item]
     seperated = seperate(excluding_closed)
-    update_gist(seperated, token, gist_id)
+    sortedBySalary = sorted(seperated, key=lambda x: re.search(r'~.+만원', x["급여"]).group(0)[1:], reverse=True)
+    # with open("data.json", "w", encoding="utf-8") as f:
+    #     json.dump(sortedBySalary, f, ensure_ascii=False, indent=4)
+    update_gist(sortedBySalary, token, gist_id)
 
 if __name__ == "__main__":
     run()
