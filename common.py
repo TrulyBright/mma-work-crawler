@@ -1,11 +1,11 @@
 import json
 import logging
 import colorlog
-import requests
 import xml.etree.ElementTree as ET
 import httpx
 
 def fetch(endpoint: str, key: str):
+    # TLS 1.2 is required for the API. requests does not support TLS 1.2.
     return httpx.get(endpoint, params={
         "numOfRows": 10000,
         "pageNo": 1,
