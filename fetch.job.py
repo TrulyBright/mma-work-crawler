@@ -98,7 +98,7 @@ def fill_option_pool(data: list[dict]):
             if "" in pools[key]:
                 pools[key].remove("")
     pools = {
-        key: sorted(value, key=lambda x: re.match(r'~.+만원$', x).group(0)[1:], reverse=True)
+        key: sorted(value, key=lambda x: re.search(r'~.+만원$', x).group(0)[1:], reverse=True)
         if key == "급여"
         else sorted(value)
         for key, value in pools.items()
