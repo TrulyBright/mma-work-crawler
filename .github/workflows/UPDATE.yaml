@@ -13,7 +13,8 @@ jobs:
     Deploy-to-the-Azure-SWA:
         runs-on: ubuntu-latest
         env:
-            API_ENDPOINT: ${{ secrets.API_ENDPOINT }}
+            API_ENDPOINT_JOB: ${{ secrets.API_ENDPOINT_JOB }}
+            API_ENDPOINT_COMPANY: ${{ secrets.API_ENDPOINT_COMPANY }}
             API_KEY: ${{ secrets.API_KEY }}
             GITHUB_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
             GIST_ID: ${{ secrets.GIST_ID }}
