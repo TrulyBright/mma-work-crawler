@@ -9,7 +9,7 @@ def fetch(endpoint: str, key: str):
         "numOfRows": 10000,
         "pageNo": 1,
         "ServiceKey": key
-    }, verify=False).content.decode()
+    }).content.decode()
 
 def parse(data: str):
     parsed = ET.fromstring(data)
