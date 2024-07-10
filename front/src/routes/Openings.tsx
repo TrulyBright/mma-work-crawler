@@ -187,17 +187,6 @@ const openings = async (
         <>
         <Paper>
         <List subheader={<ListSubheader>검색조건</ListSubheader>} disablePadding>
-            <ListItem>
-                <TextField label="업체명" fullWidth size="small" onChange={(e) => {
-                    const value = e.target.value
-                    setFilters((prev) => {
-                        const newFilters = prev.filter(filter => filter.entry !== "업체명")
-                        if (value === "") return newFilters
-                        newFilters.push({entry: "업체명", values: [value]})
-                        return newFilters
-                    })
-                }}/>
-            </ListItem>
             {주요검색순서.map((entry) => (
                 // @ts-expect-error
                 <검색폼 entry={entry} properties={속성풀[entry]} filters={filters} setFilters={setFilters} icon={iconByFilter[entry]} />
@@ -238,6 +227,17 @@ const openings = async (
                     <ListItemText primary="상세검색 접기" />
                 </ListItemButton>
             </Collapse>
+            <ListItem>
+                <TextField label="업체명" fullWidth size="small" onChange={(e) => {
+                    const value = e.target.value
+                    setFilters((prev) => {
+                        const newFilters = prev.filter(filter => filter.entry !== "업체명")
+                        if (value === "") return newFilters
+                        newFilters.push({entry: "업체명", values: [value]})
+                        return newFilters
+                    })
+                }}/>
+            </ListItem>
         </List>
         </Paper>
         <List subheader={resultSummary()} sx={{mt: 1}}>
