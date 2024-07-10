@@ -46,7 +46,7 @@ def update_gist(data: list[dict], token: str, gist_id: str):
                     "content": json.dumps(data, ensure_ascii=False)
                 },
                 "병역지정업체속성풀.json": {
-                    "content": json.dumps(fill_option_pool(data), ensure_ascii=False, indent=4)
+                    "content": json.dumps(fill_option_pool(data), ensure_ascii=False)
                 }
             }
         })
