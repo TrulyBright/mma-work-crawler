@@ -1,7 +1,7 @@
 import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField, IconButton, Checkbox, FormControl, FormControlLabel, FormLabel, Tooltip, Button, CircularProgress } from "@mui/material"
-import 채용공고목록 from "../../data/채용공고목록.json"
-import 속성풀 from "../../data/속성풀.json"
-import 최종갱신 from "../../data/최종갱신.json"
+const 채용공고목록promise = import("../../data/채용공고목록.json")
+const 속성풀promise = import("../../data/속성풀.json")
+const 최종갱신promise = import("../../data/최종갱신.json")
 import { AttachMoney, Badge, Bedtime, Business, Campaign, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, OpenInNew, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, Star, StarBorder, Translate } from "@mui/icons-material"
 import React from "react"
 import { Filter } from "../interfaces"
@@ -148,14 +148,19 @@ export default () => {
         <CircularProgress />
         <p>불러오는 중입니다...</p>
     </>))
+    const P = Promise.all([채용공고목록promise, 속성풀promise, 최종갱신promise])
     React.useEffect(() => {
-        openings(
-            expanded, setExpanded,
-            filters, setFilters,
-            즐겨찾기, set즐겨찾기,
-            expandOpening, setExpandOpening,
-            listSize, setListSize
-        ).then(setRendered)
+        P.then(([목록, 풀, 갱신]) => 
+            openings(
+                expanded, setExpanded,
+                filters, setFilters,
+                즐겨찾기, set즐겨찾기,
+                expandOpening, setExpandOpening,
+                listSize, setListSize,
+                목록.default, 풀.default, 갱신.default
+            )
+        )
+        .then(setRendered)
     }, [expanded, filters, 즐겨찾기, expandOpening, listSize])
 
     return rendered
@@ -167,6 +172,7 @@ const openings = async (
     즐겨찾기: {[key: number]: boolean}, set즐겨찾기: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>,
     expandOpening: {[key: number]: boolean}, setExpandOpening: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>,
     listSize: number, setListSize: React.Dispatch<React.SetStateAction<number>>,
+    채용공고목록: Awaited<typeof 채용공고목록promise>["default"], 속성풀: Awaited<typeof 속성풀promise>["default"], 최종갱신: Awaited<typeof 최종갱신promise>["default"]
 ) => {
     const visibleOpenings = 복수공고다중필터검사(채용공고목록, filters, 즐겨찾기)
     const 즐찾변경 = (공고번호: number) => {
