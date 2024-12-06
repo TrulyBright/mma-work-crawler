@@ -30,7 +30,6 @@ jobs:
                 python -m pip install --upgrade pip
                 pip install -r requirements.txt
                 python fetch.job.py
-                python fetch.company.py
             - uses: Azure/static-web-apps-deploy@v1
               env:
                 PRE_BUILD_COMMAND: npm i -g pnpm
