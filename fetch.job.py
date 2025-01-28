@@ -12,6 +12,8 @@ from common import fetch, parse, setup_logging, translate
 
 logger = logging.getLogger("fetch.py")
 
+salary_sorter = lambda x: int(x["급여조건코드"]) if x["급여"] != "~2000만원이하" else 1
+
 async def scrap_extra_info(data: list[dict]):
     """API로 조회되지 않는 정보는 사이트를 직접 스크랩해서 가져온다."""
     logger.info("Scraping extra info...")
@@ -58,29 +60,29 @@ def parse_extra_info(data: list[httpx.Response]):
             raise
     return [f(response) for response in tqdm(data)]
 
-def seperate복리후생(data: list[dict]):
-    logger.info("Seperating '복리후생'...")
+def separate복리후생(data: list[dict]):
+    logger.info("separating '복리후생'...")
     for item in data:
         if "복리후생" in item:
             item["복리후생"] = item["복리후생"].split(", ")
     return data
 
-def seperate자격증(data: list[dict]):
-    logger.info("Seperating '자격증'...")
+def separate자격증(data: list[dict]):
+    logger.info("separating '자격증'...")
     for item in data:
         if 자격증 := item.get("자격증"):
             item["자격증"] = list(map(lambda line: line.split(">")[-1], 자격증.split(",")))
     return data
 
 def sepearte주소(data: list[dict]):
-    logger.info("Seperating '주소'...")
+    logger.info("separating '주소'...")
     for item in data:
         if 주소 := item.get("주소"):
             item["주소"] = 주소.split(" ")
     return data
 
-def seperate(data: list[dict]):
-    return sepearte주소(seperate자격증(seperate복리후생(data)))
+def separate(data: list[dict]):
+    return sepearte주소(separate자격증(separate복리후생(data)))
 
 def fill_option_pool(data: list[dict]):
     """속성 풀을 채운다."""
@@ -98,7 +100,7 @@ def fill_option_pool(data: list[dict]):
             if "" in pools[key]:
                 pools[key].remove("")
     pools = {
-        key: sorted(value, key=lambda x: re.search(r'~.+만원', x).group(0)[1:])
+        key: sorted(value, key=lambda x: re.search(r'\d+', x).group(0))
         if key == "급여"
         else sorted(value)
         for key, value in pools.items()
@@ -153,11 +155,11 @@ def run():
         else:
             item.clear()
     excluding_closed = [item for item in translated if item]
-    seperated = seperate(excluding_closed)
-    sortedBySalary = sorted(seperated, key=lambda x: re.search(r'~.+만원', x["급여"]).group(0)[1:], reverse=True)
-    # with open("data.json", "w", encoding="utf-8") as f:
-    #     json.dump(sortedBySalary, f, ensure_ascii=False, indent=4)
-    update_gist(sortedBySalary, token, gist_id)
+    separated = separate(excluding_closed)
+    sorted_by_salary = sorted(separated, key=salary_sorter, reverse=True)
+    with open("data.json", "w", encoding="utf-8") as f:
+        json.dump(sorted_by_salary, f, ensure_ascii=False, indent=4)
+    update_gist(sorted_by_salary, token, gist_id)
 
 if __name__ == "__main__":
     run()
