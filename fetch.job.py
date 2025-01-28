@@ -12,7 +12,7 @@ from common import fetch, parse, setup_logging, translate
 
 logger = logging.getLogger("fetch.py")
 
-salary_sorter = lambda x: int(x["급여조건코드"]) if x["급여"] != "~2000만원이하" else 1
+salary_sorter = lambda x: 1 if x["급여"] == "~2000만원이하" else int(re.search(r'\d+', x["급여"]).group(0))
 
 async def scrap_extra_info(data: list[dict]):
     """API로 조회되지 않는 정보는 사이트를 직접 스크랩해서 가져온다."""
@@ -53,7 +53,7 @@ def parse_extra_info(data: list[httpx.Response]):
             값["비고"] = soup.find("table", attrs={"summary": "비고 사항"}).find("td").get_text("\n", True)
             return 값
         except:
-            비고= soup.find("table", attrs={"summary": "비고 사항"}).find("td").get_text("\n", True)
+            비고 = soup.find("table", attrs={"summary": "비고 사항"}).find("td").get_text("\n", True)
             if 비고 == "이미 마감된 채용공고입니다.":
                 return {}
             logger.error(f"추가 사항을 파싱하는데 실패했습니다. {response.url}")
@@ -74,7 +74,7 @@ def separate자격증(data: list[dict]):
             item["자격증"] = list(map(lambda line: line.split(">")[-1], 자격증.split(",")))
     return data
 
-def sepearte주소(data: list[dict]):
+def separate주소(data: list[dict]):
     logger.info("separating '주소'...")
     for item in data:
         if 주소 := item.get("주소"):
@@ -82,7 +82,7 @@ def sepearte주소(data: list[dict]):
     return data
 
 def separate(data: list[dict]):
-    return sepearte주소(separate자격증(separate복리후생(data)))
+    return separate주소(separate자격증(separate복리후생(data)))
 
 def fill_option_pool(data: list[dict]):
     """속성 풀을 채운다."""
@@ -100,7 +100,7 @@ def fill_option_pool(data: list[dict]):
             if "" in pools[key]:
                 pools[key].remove("")
     pools = {
-        key: sorted(value, key=lambda x: re.search(r'\d+', x).group(0))
+        key: sorted(value, key=lambda x: 1 if x == "~2000만원이하" else int(re.search(r'\d+', x).group(0)))
         if key == "급여"
         else sorted(value)
         for key, value in pools.items()
@@ -157,8 +157,8 @@ def run():
     excluding_closed = [item for item in translated if item]
     separated = separate(excluding_closed)
     sorted_by_salary = sorted(separated, key=salary_sorter, reverse=True)
-    with open("data.json", "w", encoding="utf-8") as f:
-        json.dump(sorted_by_salary, f, ensure_ascii=False, indent=4)
+    # with open("data.json", "w", encoding="utf-8") as f:
+    #     json.dump(sorted_by_salary, f, ensure_ascii=False, indent=4)
     update_gist(sorted_by_salary, token, gist_id)
 
 if __name__ == "__main__":
