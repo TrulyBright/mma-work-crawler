@@ -315,6 +315,7 @@ const openings = async (
             </ListItemButton>}
             <ListItem>
                 <ListItemText secondary={`최종갱신: ${new Date(최종갱신).toLocaleString('ko-KR')}`}/>
+                <ListItemText secondary="국가정보관리원 대전센터 화재로 병역일터 공고가 제대로 갱신되지 않고 있습니다. 병무청 API가 복구되는 즉시 sangiyo.kr도 정상화될 예정이니다."></ListItemText>
             </ListItem>
         </List>
         </>
