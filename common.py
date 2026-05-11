@@ -15,7 +15,7 @@ def fetch(endpoint: str, key: str):
     }, timeout=None).content.decode()
 
 def parse(data: str):
-    data = data.lstrip("\ufeff\r\n\t ")
+    data = data.removeprefix("\ufeff").lstrip("\r\n\t ")
     if not data:
         raise Exception("API Error. Empty response body")
     try:
@@ -29,7 +29,7 @@ def parse(data: str):
             parsed = json.loads(data)
         except json.JSONDecodeError as error:
             raise Exception(
-                f"API Error. Failed to parse response body. preview={data[:RESPONSE_PREVIEW_LENGTH]!r}"
+                f"API Error. Response is neither valid XML nor JSON. preview={data[:RESPONSE_PREVIEW_LENGTH]!r}"
             ) from error
         response = parsed.get("response", parsed)
         header = response.get("header", {})
