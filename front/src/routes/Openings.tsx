@@ -333,7 +333,7 @@ const Openings = () => {
                                     {즐겨찾기[공고.공고번호] ? <Star fontSize="small"/> : <StarBorder fontSize="small"/>}
                                 </IconButton>
                                 <ListItemButton onClick={() => setExpandOpening((prev) => ({...prev, [공고.공고번호]: !prev[공고.공고번호]}))}>
-                                    <ListItemText primary={공고.공고제목} secondary={`${공고.업체명}·${공고.업종}·${공고.급여 ?? "급여정보없음"}`} />
+                                    <ListItemText primary={공고.공고제목} secondary={`${공고.업체명}·${공고.업종}·${공고.급여 ?? "급여 정보 없음"}`} />
                                     {deadline && <Chip size="small" label={deadline.label} color={deadline.color} sx={{mr: 1}} />}
                                     <ExpandMore sx={{
                                         transform: expandOpening[공고.공고번호] ? 'rotate(-180deg)' : 'rotate(0)',
