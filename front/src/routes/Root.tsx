@@ -28,8 +28,8 @@ const Root = () => {
             <Toolbar />
             <Divider />
             <List>
-            <ListItem disablePadding component={RouterLink} to="/openings" sx={{color: "inherit"}}>
-                    <ListItemButton>
+                <ListItem disablePadding component={RouterLink} to="/openings" sx={{color: "inherit"}}>
+                    <ListItemButton onClick={handleDrawerClose}>
                         <ListItemIcon><ManageSearch /></ListItemIcon>
                         <ListItemText primary="채용공고" />
                     </ListItemButton>
@@ -109,11 +109,18 @@ const Root = () => {
 }
 
 export default () => {
-    const [mode, setMode] = React.useState<"light" | "dark">('light')
+    const [mode, setMode] = React.useState<"light" | "dark">(() => {
+        const saved = localStorage.getItem("colorMode")
+        return saved === "dark" ? "dark" : "light"
+    })
     const colorMode = React.useMemo(
         () => ({
             toggleColorMode: () => {
-                setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'))
+                setMode((prevMode) => {
+                    const nextMode = prevMode === 'light' ? 'dark' : 'light'
+                    localStorage.setItem("colorMode", nextMode)
+                    return nextMode
+                })
             },
         }),
         [],
