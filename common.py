@@ -20,7 +20,11 @@ def parse(data: str):
         raise Exception("API Error. Empty response body")
     try:
         parsed = ET.fromstring(data)
-        resultcode = parsed.find("header").find("resultCode").text
+        header = parsed.find("header")
+        result_code_node = header.find("resultCode") if header is not None else None
+        if result_code_node is None:
+            raise Exception("API Error. XML response missing header.resultCode")
+        resultcode = result_code_node.text
         if resultcode != "00":
             raise Exception(f"API Error. resultCode: {resultcode}")
         return [{tag.tag: tag.text for tag in item} for item in parsed.iter("item")]
@@ -29,7 +33,7 @@ def parse(data: str):
             parsed = json.loads(data)
         except json.JSONDecodeError as error:
             raise Exception(
-                f"API Error. Response is neither valid XML nor JSON. preview={data[:RESPONSE_PREVIEW_LENGTH]!r}"
+                f"API Error. Response is neither valid XML nor JSON. Check API endpoint health or network connectivity. preview={data[:RESPONSE_PREVIEW_LENGTH]!r}"
             ) from error
         response = parsed.get("response", parsed)
         header = response.get("header", {})
