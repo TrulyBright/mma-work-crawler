@@ -78,7 +78,7 @@ const 복수공고다중필터검사 = (채용공고목록: Opening[], filters: 
 
 const 급여최대값파싱 = (급여?: string) => {
     if (!급여) return -1
-    const numeric = Array.from(급여.matchAll(/\d[\d,]*/g), (m) => Number(m[0].replaceAll(",", "")))
+    const numeric = Array.from(급여.matchAll(/\d[\d,]*/g), (m) => Number(m[0].replace(/,/g, "")))
     if (numeric.length === 0) return -1
     return Math.max(...numeric)
 }
@@ -175,7 +175,7 @@ export default () => {
     const [listSize, setListSize] = React.useState(eachLoadingUnit)
     const [채용공고목록, set채용공고목록] = React.useState<Opening[] | null>(null)
     const [속성풀, set속성풀] = React.useState<PropertyPool | null>(null)
-    const [최종갱신, set최종갱신] = React.useState<string>("")
+    const [최종갱신, set최종갱신] = React.useState<string | number>("")
 
     React.useEffect(() => {
         const items = JSON.parse(localStorage.getItem("즐겨찾기") || "{}")
@@ -183,7 +183,7 @@ export default () => {
         Promise.all([채용공고목록promise, 속성풀promise, 최종갱신promise]).then(([목록, 풀, 갱신]) => {
             set채용공고목록(목록.default as Opening[])
             set속성풀(풀.default as PropertyPool)
-            set최종갱신(갱신.default as string)
+            set최종갱신(갱신.default as string | number)
         })
     }, [])
 
