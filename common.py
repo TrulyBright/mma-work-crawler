@@ -38,7 +38,9 @@ def parse(data: str):
         response = parsed.get("response", parsed)
         header = response.get("header", {})
         resultcode = header.get("resultCode")
-        if resultcode and resultcode != "00":
+        if resultcode is None:
+            raise Exception("API Error. JSON response missing header.resultCode")
+        if resultcode != "00":
             raise Exception(f"API Error. resultCode: {resultcode}")
         items = response.get("body", {}).get("items", [])
         if isinstance(items, dict):
