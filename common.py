@@ -4,6 +4,8 @@ import colorlog
 import xml.etree.ElementTree as ET
 import httpx
 
+RESPONSE_PREVIEW_LENGTH = 120
+
 def fetch(endpoint: str, key: str):
     # TLS 1.2 is required for the API. requests does not support TLS 1.2.
     return httpx.get(endpoint, params={
@@ -26,7 +28,9 @@ def parse(data: str):
         try:
             parsed = json.loads(data)
         except json.JSONDecodeError as error:
-            raise Exception(f"API Error. Failed to parse response body. preview={data[:120]!r}") from error
+            raise Exception(
+                f"API Error. Failed to parse response body. preview={data[:RESPONSE_PREVIEW_LENGTH]!r}"
+            ) from error
         response = parsed.get("response", parsed)
         header = response.get("header", {})
         resultcode = header.get("resultCode")
@@ -35,10 +39,10 @@ def parse(data: str):
         items = response.get("body", {}).get("items", [])
         if isinstance(items, dict):
             items = items.get("item", [])
-        if isinstance(items, dict):
-            return [items]
         if isinstance(items, list):
             return items
+        if isinstance(items, dict):
+            return [items]
         raise Exception("API Error. Unexpected JSON response format")
 
 def translate(data: list[dict], filename: str):
