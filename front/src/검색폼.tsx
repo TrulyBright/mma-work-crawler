@@ -3,7 +3,7 @@ import postposition from "cox-postposition"
 import { Filter } from "./interfaces"
 import React from "react"
 
-export default (props: {entry: string, properties: (string | string[])[], filters: Filter[], setFilters: React.Dispatch<React.SetStateAction<Filter[]>>, icon: React.ElementType}) => {
+const 검색폼 = (props: {entry: string, properties: (string | string[])[], filters: Filter[], setFilters: React.Dispatch<React.SetStateAction<Filter[]>>, icon: React.ElementType}) => {
     const { entry, properties, filters, setFilters } = props
     const Icon = props.icon
     const valueKey = (value: string | string[]) => value instanceof Array ? value.join("||") : value
@@ -62,3 +62,5 @@ export default (props: {entry: string, properties: (string | string[])[], filter
         </ListItem>
     )
 }
+
+export default 검색폼

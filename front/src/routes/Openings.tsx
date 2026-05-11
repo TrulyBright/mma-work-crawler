@@ -88,11 +88,10 @@ const 마감일상태 = (마감일?: string) => {
     const year = Number(마감일.slice(0, 4))
     const month = Number(마감일.slice(4, 6)) - 1
     const day = Number(마감일.slice(6, 8))
-    const deadline = new Date(year, month, day)
-    deadline.setHours(0, 0, 0, 0)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const diffDays = Math.floor((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    const deadlineUtc = Date.UTC(year, month, day)
+    const now = new Date()
+    const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    const diffDays = Math.floor((deadlineUtc - todayUtc) / (1000 * 60 * 60 * 24))
     if (diffDays < 0) return { label: "마감", color: "error" as const }
     if (diffDays <= 7) return { label: `D-${diffDays}`, color: "warning" as const }
     return null
@@ -167,7 +166,7 @@ const detailOrder = [
 
 const eachLoadingUnit = 50
 
-export default () => {
+const Openings = () => {
     const [expanded, setExpanded] = React.useState(false)
     const [filters, setFilters] = React.useState<Filter[]>([])
     const [즐겨찾기, set즐겨찾기] = React.useState({} as {[key: string]: boolean})
@@ -198,7 +197,10 @@ export default () => {
     const activeFilters = React.useMemo(() => filters.filter((f) => f.values.length !== 0), [filters])
     const visibleOpenings = React.useMemo(() => {
         if (!채용공고목록) return []
-        return 복수공고다중필터검사(채용공고목록, filters, 즐겨찾기).sort((a, b) => 급여최대값파싱(b.급여) - 급여최대값파싱(a.급여))
+        return 복수공고다중필터검사(채용공고목록, filters, 즐겨찾기)
+            .map((opening) => ({ opening, salaryScore: 급여최대값파싱(opening.급여) }))
+            .sort((a, b) => b.salaryScore - a.salaryScore)
+            .map(({ opening }) => opening)
     }, [채용공고목록, filters, 즐겨찾기])
 
     const 즐찾변경 = (공고번호: string) => {
@@ -387,3 +389,5 @@ export default () => {
         </>
     )
 }
+
+export default Openings

@@ -108,7 +108,7 @@ const Root = () => {
     return layout
 }
 
-export default () => {
+const RootPage = () => {
     const [mode, setMode] = React.useState<"light" | "dark">(() => {
         const saved = localStorage.getItem("colorMode")
         return saved === "dark" ? "dark" : "light"
@@ -142,3 +142,5 @@ export default () => {
         </ColorModeContext.Provider>
     )
 }
+
+export default RootPage
