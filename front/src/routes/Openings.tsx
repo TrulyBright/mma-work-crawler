@@ -1,11 +1,13 @@
-import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField, IconButton, Checkbox, FormControl, FormControlLabel, FormLabel, Tooltip, Button, CircularProgress, Badge, Chip, Stack, Typography } from "@mui/material"
+import { ListItemText, ListItemButton, List, ListSubheader, Paper, Collapse, ListItem, ListItemIcon, TextField, IconButton, Checkbox, FormControl, FormControlLabel, FormLabel, Tooltip, Button, CircularProgress, Badge, Chip, Stack, Typography, Menu, MenuItem } from "@mui/material"
 const 채용공고목록promise = import("../../data/채용공고목록.json")
 const 속성풀promise = import("../../data/속성풀.json")
 const 최종갱신promise = import("../../data/최종갱신.json")
-import { AttachMoney, Badge as BadgeIcon, Bedtime, Business, Campaign, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, OpenInNew, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, SearchOff, Star, StarBorder, Translate } from "@mui/icons-material"
+import { ArrowDropDown, AttachMoney, Badge as BadgeIcon, Bedtime, Business, Campaign, ChangeCircle, DateRange, EditCalendar, Engineering, EventBusy, EventNote, ExpandLess, ExpandMore, Factory, Filter9Plus, FormatListBulleted, FormatListNumbered, GroupAdd, Handyman, HistoryEdu, Home, LocalDining, Looks5, MoveDown, Notes, OpenInNew, People, Phone, Pin, Place, Publish, Restaurant, Schedule, School, SearchOff, Star, StarBorder, Translate } from "@mui/icons-material"
 import React from "react"
 import { Filter } from "../interfaces"
 import 검색폼 from "../검색폼"
+
+type SortOrder = "최신순" | "연봉순" | "마감일순"
 
 type Opening = {
     공고번호: string
@@ -14,6 +16,7 @@ type Opening = {
     업종: string
     급여?: string
     마감일?: string
+    최종변동일?: string
     [key: string]: unknown
 }
 
@@ -175,6 +178,8 @@ const Openings = () => {
     const [채용공고목록, set채용공고목록] = React.useState<Opening[] | null>(null)
     const [속성풀, set속성풀] = React.useState<PropertyPool | null>(null)
     const [최종갱신, set최종갱신] = React.useState<string | number>("")
+    const [sortOrder, setSortOrder] = React.useState<SortOrder>("최신순")
+    const [sortAnchor, setSortAnchor] = React.useState<HTMLElement | null>(null)
 
     React.useEffect(() => {
         const items = JSON.parse(localStorage.getItem("즐겨찾기") || "{}")
@@ -197,11 +202,27 @@ const Openings = () => {
     const activeFilters = React.useMemo(() => filters.filter((f) => f.values.length !== 0), [filters])
     const visibleOpenings = React.useMemo(() => {
         if (!채용공고목록) return []
-        return 복수공고다중필터검사(채용공고목록, filters, 즐겨찾기)
-            .map((opening) => ({ opening, salaryScore: 급여최대값파싱(opening.급여) }))
-            .sort((a, b) => b.salaryScore - a.salaryScore)
-            .map(({ opening }) => opening)
-    }, [채용공고목록, filters, 즐겨찾기])
+        const filtered = 복수공고다중필터검사(채용공고목록, filters, 즐겨찾기)
+        if (sortOrder === "연봉순") {
+            return filtered
+                .map((opening) => ({ opening, salaryScore: 급여최대값파싱(opening.급여) }))
+                .sort((a, b) => b.salaryScore - a.salaryScore)
+                .map(({ opening }) => opening)
+        }
+        if (sortOrder === "마감일순") {
+            return [...filtered].sort((a, b) => {
+                const da = a.마감일 ?? "99999999"
+                const db = b.마감일 ?? "99999999"
+                return da < db ? -1 : da > db ? 1 : 0
+            })
+        }
+        // 최신순: 최종변동일 내림차순
+        return [...filtered].sort((a, b) => {
+            const da = a.최종변동일 ?? "00000000"
+            const db = b.최종변동일 ?? "00000000"
+            return db < da ? -1 : db > da ? 1 : 0
+        })
+    }, [채용공고목록, filters, 즐겨찾기, sortOrder])
 
     const 즐찾변경 = (공고번호: string) => {
         set즐겨찾기((prev) => {
@@ -310,7 +331,27 @@ const Openings = () => {
                                 <Button variant="contained" sx={{py: 0, px: 1, minWidth: 0}}>조건</Button>
                             </Badge>
                         </Tooltip>
-                        에 맞는 <strong>{visibleOpenings.length}</strong>개를 <strong>연봉순</strong>으로 정렬합니다.
+                        에 맞는 <strong>{visibleOpenings.length}</strong>개를{" "}
+                        <Button
+                            size="small"
+                            onClick={(e) => setSortAnchor(e.currentTarget)}
+                            endIcon={<ArrowDropDown />}
+                            sx={{px: 0.5, py: 0, minWidth: 0, fontWeight: "bold"}}
+                        >
+                            {sortOrder}
+                        </Button>
+                        <Menu anchorEl={sortAnchor} open={Boolean(sortAnchor)} onClose={() => setSortAnchor(null)}>
+                            {(["최신순", "연봉순", "마감일순"] as SortOrder[]).map((opt) => (
+                                <MenuItem
+                                    key={opt}
+                                    selected={sortOrder === opt}
+                                    onClick={() => { setSortOrder(opt); setSortAnchor(null) }}
+                                >
+                                    {opt}
+                                </MenuItem>
+                            ))}
+                        </Menu>
+                        으로 정렬합니다.
                         <Button size="small" sx={{ml: 1}} onClick={() => setExpandOpening({})}>모두 접기</Button>
                     </ListSubheader>
                 }
