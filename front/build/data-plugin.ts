@@ -6,7 +6,8 @@ import { resolve } from "node:path"
 import { gzipSync, constants } from "node:zlib"
 import type { Plugin, ResolvedConfig } from "vite"
 import type { DatasetName } from "../src/db/schema"
-import { type Encoded, encodeCompanies, encodeOpenings } from "./encode"
+import { normalizeName } from "../src/db/ngram"
+import { encodeCompanies, encodeOpenings, isCompanyData } from "./encode"
 
 const VIRTUAL = "virtual:mma-data"
 const RESOLVED = "\0" + VIRTUAL
@@ -14,10 +15,12 @@ const RESOLVED = "\0" + VIRTUAL
 type Asset = { fileName: string, source: Uint8Array }
 type Files = { core: string, detail: string, coreRaw: string, detailRaw: string }
 
-const sources: Record<DatasetName, { file: string, encode: (raw: Record<string, unknown>[], updatedAt: number) => Encoded }> = {
-    openings: { file: "채용공고목록.json", encode: encodeOpenings },
-    companies: { file: "병역지정업체목록.json", encode: encodeCompanies },
+const sources: Record<DatasetName, string> = {
+    openings: "채용공고목록.json",
+    companies: "병역지정업체목록.json",
 }
+
+type Raw = Record<string, unknown>[]
 
 const readJson = (path: string): unknown => (existsSync(path) ? JSON.parse(readFileSync(path, "utf-8")) : undefined)
 
@@ -25,7 +28,7 @@ const updatedAt = (dir: string) => {
     const value = readJson(resolve(dir, "최종갱신.json"))
     if (typeof value === "string" && !Number.isNaN(Date.parse(value))) return Date.parse(value)
     if (typeof value === "number") return value < 1e12 ? value * 1000 : value
-    const mtimes = Object.values(sources).map((s) => resolve(dir, s.file)).filter(existsSync).map((p) => statSync(p).mtimeMs)
+    const mtimes = Object.values(sources).map((file) => resolve(dir, file)).filter(existsSync).map((p) => statSync(p).mtimeMs)
     return mtimes.length ? Math.max(...mtimes) : 0
 }
 
@@ -33,11 +36,24 @@ const build = (dir: string) => {
     const assets: Asset[] = []
     const urls = {} as Record<DatasetName, Files>
     const time = updatedAt(dir)
-    for (const [name, { file, encode }] of Object.entries(sources) as [DatasetName, typeof sources[DatasetName]][]) {
+    const raws = {} as Record<DatasetName, Raw>
+    for (const [name, file] of Object.entries(sources) as [DatasetName, string][]) {
         const raw = readJson(resolve(dir, file))
         if (raw === undefined) console.warn(`[mma-data] ${file}이 없습니다. 빈 목록으로 빌드합니다.`)
         if (raw !== undefined && !Array.isArray(raw)) throw new Error(`${file}의 형식이 올바르지 않습니다.`)
-        const encoded = encode((raw ?? []) as Record<string, unknown>[], time)
+        raws[name] = (raw ?? []) as Raw
+    }
+    if (!isCompanyData(raws.companies)) {
+        console.warn("[mma-data] 병역지정업체목록.json이 예전 형식입니다. 업체목록을 비워 둡니다.")
+        raws.companies = []
+    }
+    const names = (raw: Raw) => new Set(raw.map((r) => normalizeName(String(r["업체명"] ?? ""))))
+    const encodedAll = {
+        openings: encodeOpenings(raws.openings, time, names(raws.companies)),
+        companies: encodeCompanies(raws.companies, time, names(raws.openings)),
+    }
+    for (const name of Object.keys(sources) as DatasetName[]) {
+        const encoded = encodedAll[name]
         const files = {} as Files
         for (const part of ["core", "detail"] as const) {
             const bytes = encoded[part]

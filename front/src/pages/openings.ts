@@ -16,6 +16,7 @@ const 마감일상태 = (마감일?: string): Chip | undefined => {
 const 공고번호 = (table: Table, id: number) => table.text("공고번호")![id]
 
 export const openings: PageConfig = {
+    path: "/openings",
     dataset: "openings",
     schema: 채용공고,
     noun: "공고",
@@ -28,6 +29,9 @@ export const openings: PageConfig = {
         secondary: `${table.text("업체명")![id]}·${table.field("업종", id)}·${table.field("급여", id) ?? "급여 정보 없음"}`,
         chip: 마감일상태(table.field("마감일", id)),
     }),
+    keyword: { label: "공고제목·담당업무", fields: ["공고제목", "담당업무"] },
+    fieldLink: (table, id, field) =>
+        field === "업체명" && table.flag("업체목록", id) ? `/companies?업체명=${encodeURIComponent(table.text("업체명")![id])}` : undefined,
     link: (table, id) => ({
         row: "공고제목",
         href: `https://work.mma.go.kr/caisBYIS/search/cygonggogeomsaekView.do?cygonggo_no=${공고번호(table, id)}`,

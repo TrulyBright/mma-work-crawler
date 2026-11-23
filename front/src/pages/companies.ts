@@ -7,6 +7,7 @@ const 업체코드 = (table: Table, id: number) => table.num("업체코드")![id
 const 인원 = new Set(병역지정업체.detailNum)
 
 export const companies: PageConfig = {
+    path: "/companies",
     dataset: "companies",
     schema: 병역지정업체,
     noun: "업체",
@@ -19,6 +20,8 @@ export const companies: PageConfig = {
         secondary: [table.field("요원", id), table.field("업종", id), table.facetValues("주소", id)[0]].filter(Boolean).join("·"),
         chip: table.field("채용유무", id) ? { label: table.field("채용유무", id)!, color: "success" } : undefined,
     }),
+    fieldLink: (table, id, field) =>
+        field === "채용유무" && table.flag("채용공고", id) ? `/openings?업체명=${encodeURIComponent(table.text("업체명")![id])}` : undefined,
     link: (table, id) => {
         const code = 업체코드(table, id)
         if (!code) return undefined

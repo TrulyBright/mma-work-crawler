@@ -1,4 +1,4 @@
-import { andInto, full, has, orInto } from "./bits"
+import { andInto, countAnd, full, has, orInto } from "./bits"
 import type { Table } from "./table"
 
 /** 검색조건 이름 → 고른 값 번호 */
@@ -38,6 +38,36 @@ export const evaluate = (table: Table, query: Query) => {
     }
     for (const mask of query.extra) andInto(result, mask)
     return result
+}
+
+/**
+ * 검색조건별로 각 값을 고르면 몇 건이 되는지 센다.
+ * 하나라도 가지면 되는 조건은 그 조건만 뺀 결과와, 모두 가져야 하는 조건은 현재 결과와 교집합을 센다.
+ */
+export const facetCounts = (table: Table, query: Query, names: readonly string[]) => {
+    const masks = new Map<string, Uint32Array>()
+    for (const name of query.selection.keys()) {
+        const mask = facetMask(table, name, query)
+        if (mask) masks.set(name, mask)
+    }
+    const base = full(table.n)
+    for (const mask of query.extra) andInto(base, mask)
+    const result = base.slice()
+    for (const mask of masks.values()) andInto(result, mask)
+    const out = new Map<string, Int32Array>()
+    for (const name of names) {
+        const facet = table.facet(name)
+        if (!facet) continue
+        let scope = result
+        if (masks.has(name) && !query.matchAll.has(name)) {
+            scope = base.slice()
+            for (const [other, mask] of masks) if (other !== name) andInto(scope, mask)
+        }
+        const counts = new Int32Array(facet.values.length)
+        for (let v = 0; v < counts.length; v++) counts[v] = countAnd(scope, facet.row(v))
+        out.set(name, counts)
+    }
+    return { result, counts: out }
 }
 
 /** 결과를 정렬 순서대로 limit개까지 꺼낸다. */

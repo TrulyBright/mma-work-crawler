@@ -1,12 +1,12 @@
-// 이름 부분일치 검색용 바이그램 역색인.
+// 부분일치 검색용 바이그램 역색인.
 // 전송하면 이름 자체보다 커서(업체 기준 gzip 68KB 이상, 이름은 43KB) 첫 검색 때 브라우저에서 만든다.
 // 이름 끝에 \0을 붙여 모든 글자가 어떤 바이그램의 첫 글자가 되게 했다. 한 글자 검색은 키 범위 하나로 끝난다.
 import { set, wordCount } from "./bits"
 
-const normalize = (s: string) => s.replace(/㈜/g, "(주)").replace(/\s+/g, "").toLowerCase()
+export const normalizeName = (s: string) => s.replace(/㈜/g, "(주)").replace(/\s+/g, "").toLowerCase()
 const REGEX_META = /[\\^$.*+?()[\]{}|]/
 
-export class NameIndex {
+export class TextIndex {
     private readonly keys: Uint32Array
     private readonly starts: Uint32Array
     private readonly ids: Uint16Array
@@ -15,7 +15,7 @@ export class NameIndex {
 
     constructor(private readonly names: string[]) {
         this.W = wordCount(names.length)
-        this.normalized = names.map(normalize)
+        this.normalized = names.map(normalizeName)
         let total = 0
         for (const s of this.normalized) total += s.length
         // (바이그램 << 16 | 레코드 번호)를 float64 하나에 담아 한 번에 정렬한다. 최대 2^48이라 정확하다.
@@ -70,7 +70,7 @@ export class NameIndex {
 
     search(query: string): Uint32Array {
         const out = new Uint32Array(this.W)
-        const q = normalize(query)
+        const q = normalizeName(query)
         if (q.length === 1) {
             const c = q.charCodeAt(0)
             const from = this.starts[this.lowerBound(c * 65536)]
