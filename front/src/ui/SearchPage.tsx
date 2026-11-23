@@ -307,8 +307,14 @@ const Row = memo(({ table, config, id, open, favorite, onToggle, onFavorite }: R
 
 const Detail = ({ table, config, id, onClose }: { table: Table, config: PageConfig, id: number, onClose: (id: number) => void }) => {
     const [, rerender] = useState(0)
-    useEffect(() => (table.detailLoaded ? undefined : table.onDetail(() => rerender((x) => x + 1))), [table])
-    if (!table.detailLoaded) return <li class="detail"><Loading /></li>
+    const loaded = table.detailLoaded
+    useEffect(() => {
+        if (loaded) return
+        // 그린 뒤 effect가 돌기 전에 도착했을 수도 있다.
+        if (table.detailLoaded) rerender((x) => x + 1)
+        else return table.onDetail(() => rerender((x) => x + 1))
+    }, [table, loaded])
+    if (!loaded) return <li class="detail"><Loading /></li>
     const link = config.link(table, id)
     const format = config.format ?? ((_: string, value: string) => value)
     return (
