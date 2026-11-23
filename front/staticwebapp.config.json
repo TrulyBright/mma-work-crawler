@@ -1,5 +1,20 @@
 {
     "navigationFallback": {
-      "rewrite": "/index.html"
+      "rewrite": "/index.html",
+      "exclude": ["/assets/*", "/data/*"]
+    },
+    "routes": [
+      {
+        "route": "/assets/*",
+        "headers": { "cache-control": "public, max-age=31536000, immutable" }
+      },
+      {
+        "route": "/data/*",
+        "headers": { "cache-control": "public, max-age=31536000, immutable" }
+      }
+    ],
+    "mimeTypes": {
+      ".bin": "application/octet-stream",
+      ".raw": "application/octet-stream"
     }
 }

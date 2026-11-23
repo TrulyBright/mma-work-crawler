@@ -25,3 +25,5 @@ dist-ssr
 
 # MMA data
 data
+# TypeScript
+*.tsbuildinfo

@@ -10,37 +10,21 @@
   "scripts": {
     "update-data": "node update-data.js",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && tsc -p tsconfig.node.json && vite build",
     "build-with-data": "pnpm run update-data && pnpm run build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^5.15.10",
-    "@mui/material": "^5.15.10",
-    "@types/react-router-dom": "^5.3.3",
-    "@types/react-virtualized-auto-sizer": "^1.0.4",
-    "@types/react-window": "^1.8.8",
-    "cox-postposition": "^1.4.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
-    "react-virtualized-auto-sizer": "^1.0.22",
-    "react-window": "^1.8.10"
+    "preact": "^10.29.8"
   },
   "devDependencies": {
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.19",
+    "@types/node": "^20.19.43",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-react-swc": "^3.6.0",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
-    "octokit": "^3.2.0",
-    "typescript": "^5.3.3",
-    "vite": "^5.1.1"
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21"
   }
 }
