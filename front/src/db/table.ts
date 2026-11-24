@@ -96,6 +96,12 @@ export class Table {
         })
     }
 
+    /** 다른 데이터셋에 같은 업체가 있는지 (빌드 때 이름으로 맞춰 둔 값) */
+    flag(name: string, id: number) {
+        const bits = this.cached(`x:${name}`, () => this.array(`x:${name}`) as Uint32Array | undefined)
+        return bits ? has(bits, id) : false
+    }
+
     facetValues(name: string, id: number): string[] {
         const f = this.facet(name)
         if (!f) return []

@@ -26,7 +26,7 @@ const App = () => {
         <Shell path={path}>
             {shown.map((p) => (
                 <div key={p} hidden={p !== path}>
-                    <SearchPage config={pages[p]} />
+                    <SearchPage config={pages[p]} active={p === path} />
                 </div>
             ))}
             {!isPage(path) && <ErrorView message="Not Found" />}

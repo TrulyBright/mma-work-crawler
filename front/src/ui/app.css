@@ -360,6 +360,16 @@ main {
     overflow-wrap: anywhere;
 }
 
+.options .count {
+    margin-left: 2px;
+    color: var(--text2);
+    font-size: 0.8125rem;
+}
+
+.options label.zero {
+    opacity: 0.45;
+}
+
 .options input,
 .textfield input {
     accent-color: var(--primary);
@@ -385,6 +395,9 @@ main {
 }
 
 .name-search {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     padding: 8px 16px 16px;
 }
 
@@ -572,6 +585,12 @@ main {
     align-items: center;
     gap: 2px;
     text-decoration: none;
+}
+
+.detail a.internal {
+    display: inline;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .detail .loading {

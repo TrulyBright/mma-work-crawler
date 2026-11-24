@@ -13,10 +13,12 @@ type Props = {
     noun: string
     values: string[]
     chosen: ReadonlySet<number> | undefined
+    /** 값마다 고르면 나올 건수 */
+    counts: Int32Array | undefined
     onChange: (name: string, next: ReadonlySet<number>) => void
 }
 
-export const FilterGroup = memo(({ name, icon, noun, values, chosen, onChange }: Props) => {
+export const FilterGroup = memo(({ name, icon, noun, values, chosen, counts, onChange }: Props) => {
     const toggle = (e: Event) => {
         const input = e.target as HTMLInputElement
         const i = Number(input.dataset.i)
@@ -39,9 +41,10 @@ export const FilterGroup = memo(({ name, icon, noun, values, chosen, onChange }:
                 </legend>
                 <div class="options" onChange={toggle}>
                     {values.map((value, i) => (
-                        <label key={value}>
+                        <label key={value} class={counts && counts[i] === 0 && !chosen?.has(i) ? "zero" : undefined}>
                             <input type="checkbox" data-i={i} checked={chosen?.has(i) ?? false} />
                             <span>{value}</span>
+                            {counts && <span class="count">{counts[i]}</span>}
                         </label>
                     ))}
                 </div>
