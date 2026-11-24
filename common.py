@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import colorlog
 import xml.etree.ElementTree as ET
 import httpx
@@ -15,7 +16,7 @@ def fetch(endpoint: str, key: str):
     }, timeout=None).content.decode()
 
 def parse(data: str):
-    data = data.removeprefix("\ufeff").lstrip("\r\n\t ")
+    data = data.removeprefix("﻿").lstrip("\r\n\t ")
     if not data:
         raise Exception("API Error. Empty response body")
     try:
@@ -61,3 +62,36 @@ def setup_logging(logger: logging.Logger):
     handler.setFormatter(colorlog.ColoredFormatter("%(log_color)s%(levelname)s:%(name)s:%(message)s"))
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
+
+def dump(data) -> str:
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+
+def save(files: dict[str, object], logger: logging.Logger):
+    """OUTPUT_DIR이 있으면 그 폴더에 쓰고, 없으면 Gist에서 바뀐 파일만 갱신한다."""
+    out_dir = os.environ.get("OUTPUT_DIR")
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+        for name, data in files.items():
+            with open(os.path.join(out_dir, name), "w", encoding="utf-8") as f:
+                f.write(dump(data))
+        logger.info(f"Saved to {out_dir}.")
+        return
+    gist_url = f"https://api.github.com/gists/{os.environ['GIST_ID']}"
+    with httpx.Client(timeout=60) as client:
+        client.headers["Accept"] = "application/vnd.github+json"
+        client.headers["X-GitHub-Api-Version"] = "2022-11-28"
+        res = client.get(gist_url)
+        res.raise_for_status()
+        existing = res.json()["files"]
+        changed = {}
+        for name, data in files.items():
+            if name in existing and client.get(existing[name]["raw_url"]).json() == data:
+                continue
+            changed[name] = {"content": dump(data)}
+        if not changed:
+            logger.info("No difference found.")
+            return
+        logger.info(f"Updating {', '.join(changed)}...")
+        client.headers["Authorization"] = f"Bearer {os.environ['GITHUB_TOKEN']}"
+        res = client.patch(gist_url, json={"files": changed})
+        res.raise_for_status()
