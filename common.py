@@ -77,21 +77,26 @@ def save(files: dict[str, object], logger: logging.Logger):
         logger.info(f"Saved to {out_dir}.")
         return
     gist_url = f"https://api.github.com/gists/{os.environ['GIST_ID']}"
+    # 읽을 때도 토큰을 쓴다. 인증 없는 요청은 IP당 시간당 60회까지인데 Actions 러너는 IP를 나눠 쓴다.
+    api_headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+    }
     with httpx.Client(timeout=60) as client:
-        client.headers["Accept"] = "application/vnd.github+json"
-        client.headers["X-GitHub-Api-Version"] = "2022-11-28"
-        res = client.get(gist_url)
+        res = client.get(gist_url, headers=api_headers)
         res.raise_for_status()
         existing = res.json()["files"]
         changed = {}
         for name, data in files.items():
-            if name in existing and client.get(existing[name]["raw_url"]).json() == data:
-                continue
+            if name in existing:
+                current = client.get(existing[name]["raw_url"])
+                if current.is_success and current.json() == data:
+                    continue
             changed[name] = {"content": dump(data)}
         if not changed:
             logger.info("No difference found.")
             return
         logger.info(f"Updating {', '.join(changed)}...")
-        client.headers["Authorization"] = f"Bearer {os.environ['GITHUB_TOKEN']}"
-        res = client.patch(gist_url, json={"files": changed})
+        res = client.patch(gist_url, headers=api_headers, json={"files": changed})
         res.raise_for_status()
