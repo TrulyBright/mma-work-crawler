@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "engines": {
-    "node": ">=18",
-    "pnpm": ">=9"
+    "node": ">=22.12",
+    "pnpm": ">=10"
   },
   "type": "module",
   "scripts": {
@@ -12,19 +12,16 @@
     "dev": "vite",
     "build": "tsc && tsc -p tsconfig.node.json && vite build",
     "build-with-data": "pnpm run update-data && pnpm run build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint .",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "preact": "^10.29.8"
-  },
   "devDependencies": {
-    "@types/node": "^20.19.43",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "typescript": "^5.9.3",
-    "vite": "^5.4.21"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.74.0",
+    "vite": "^8.3.8"
   }
 }

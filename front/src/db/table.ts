@@ -1,5 +1,5 @@
-import { has, wordCount } from "./bits"
-import type { Container } from "./container"
+import { has, wordCount } from "./bits.ts"
+import type { Container } from "./container.ts"
 
 export type Facet = {
     readonly name: string

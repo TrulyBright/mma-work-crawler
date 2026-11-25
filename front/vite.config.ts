@@ -1,15 +1,11 @@
-import { defineConfig } from 'vite'
-import mmaData from './build/data-plugin'
+import { defineConfig } from "vite"
+import site from "./build/site-plugin.ts"
 
-// https://vitejs.dev/config/
+// https://vite.dev/config/
 export default defineConfig({
-  plugins: [mmaData()],
-  esbuild: {
-    jsx: 'automatic',
-    jsxImportSource: 'preact',
-  },
+  plugins: [site()],
   build: {
-    target: 'es2020',
+    target: "es2020",
     modulePreload: { polyfill: false },
   },
 })

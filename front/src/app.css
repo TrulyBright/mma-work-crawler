@@ -94,6 +94,24 @@ ul {
     display: none !important;
 }
 
+/* 화면 모드 단추는 두 모양을 다 그려 두고 지금 모드에 맞는 쪽만 보인다. */
+:root[data-theme="dark"] .light-only,
+:root:not([data-theme="dark"]) .dark-only {
+    display: none;
+}
+
+/* 주소에 검색조건이 있으면 적용할 때까지 미리 그린 목록을 가린다. 스크립트가 없어도 3초 뒤에는 보인다. */
+.pending main {
+    visibility: hidden;
+    animation: reveal 0s 3s forwards;
+}
+
+@keyframes reveal {
+    to {
+        visibility: visible;
+    }
+}
+
 .icon {
     width: 1.5rem;
     height: 1.5rem;

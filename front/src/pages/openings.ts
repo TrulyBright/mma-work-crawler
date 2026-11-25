@@ -1,11 +1,10 @@
-import { 채용공고 } from "../db/schema"
-import type { Table } from "../db/table"
-import type { Chip, PageConfig } from "../ui/SearchPage"
+import { 채용공고 } from "../db/schema.ts"
+import type { Table } from "../db/table.ts"
+import type { Chip, PageConfig } from "./types.ts"
 
-const 마감일상태 = (마감일?: string): Chip | undefined => {
+const 마감일상태 = (마감일: string | undefined, now: Date): Chip | undefined => {
     if (!마감일 || !/^\d{8}$/.test(마감일)) return undefined
     const deadline = Date.UTC(Number(마감일.slice(0, 4)), Number(마감일.slice(4, 6)) - 1, Number(마감일.slice(6, 8)))
-    const now = new Date()
     const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
     const diffDays = Math.floor((deadline - today) / (1000 * 60 * 60 * 24))
     if (diffDays < 0) return { label: "마감", color: "error" }
@@ -24,10 +23,10 @@ export const openings: PageConfig = {
     keepMissing: true,
     favoritesStorage: "즐겨찾기",
     favoriteKey: 공고번호,
-    item: (table, id) => ({
+    item: (table, id, now) => ({
         primary: table.text("공고제목")![id],
         secondary: `${table.text("업체명")![id]}·${table.field("업종", id)}·${table.field("급여", id) ?? "급여 정보 없음"}`,
-        chip: 마감일상태(table.field("마감일", id)),
+        chip: 마감일상태(table.field("마감일", id), now),
     }),
     keyword: { label: "공고제목·담당업무", fields: ["공고제목", "담당업무"] },
     fieldLink: (table, id, field) =>

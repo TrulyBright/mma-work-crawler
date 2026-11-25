@@ -1,5 +1,5 @@
-import { andInto, countAnd, full, has, orInto } from "./bits"
-import type { Table } from "./table"
+import { andInto, countAnd, full, has, orInto } from "./bits.ts"
+import type { Table } from "./table.ts"
 
 /** 검색조건 이름 → 고른 값 번호 */
 export type Selection = ReadonlyMap<string, ReadonlySet<number>>

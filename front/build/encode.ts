@@ -1,8 +1,8 @@
 // 크롤러가 Gist에 올린 원본 JSON을 색인이 들어간 바이너리로 바꾼다.
-import { wordCount } from "../src/db/bits"
-import { Kind, type Section, writeContainer } from "../src/db/container"
-import { normalizeName } from "../src/db/ngram"
-import { type Schema, 병역지정업체, 채용공고 } from "../src/db/schema"
+import { wordCount } from "../src/db/bits.ts"
+import { Kind, type Section, writeContainer } from "../src/db/container.ts"
+import { normalizeName } from "../src/db/ngram.ts"
+import { type Schema, 병역지정업체, 채용공고 } from "../src/db/schema.ts"
 
 type Raw = Record<string, unknown>
 type Record_ = Record<string, string | string[] | number | undefined>
