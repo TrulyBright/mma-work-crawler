@@ -20,6 +20,15 @@ export const companies: PageConfig = {
         secondary: [table.field("요원", id), table.field("업종", id), table.facetValues("주소", id)[0]].filter(Boolean).join("·"),
         chip: table.field("채용유무", id) ? { label: table.field("채용유무", id)!, color: "success" } : undefined,
     }),
+    analytics: (table, id) => ({
+        item_id: String(업체코드(table, id) || table.text("업체명")![id]),
+        item_name: table.text("업체명")![id],
+        item_brand: table.text("업체명")![id],
+        item_category: table.field("업종", id),
+        item_category2: table.field("요원", id),
+        item_category3: table.field("기업규모", id),
+        item_category4: table.facetValues("주소", id)[0],
+    }),
     fieldLink: (table, id, field) =>
         field === "채용유무" && table.flag("채용공고", id) ? `/openings?업체명=${encodeURIComponent(table.text("업체명")![id])}` : undefined,
     link: (table, id) => {

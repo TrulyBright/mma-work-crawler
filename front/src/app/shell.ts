@@ -1,4 +1,6 @@
 // 사이드바와 화면 모드. 화면 모드는 index.html의 첫 스크립트가 그리기 전에 맞춰 둔다.
+import { track } from "./track.ts"
+
 export const startShell = () => {
     const drawer = document.querySelector<HTMLElement>(".drawer")
     const backdrop = document.querySelector<HTMLElement>(".backdrop")
@@ -15,6 +17,7 @@ export const startShell = () => {
     document.querySelector('[data-action="theme"]')?.addEventListener("click", () => {
         const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark"
         document.documentElement.dataset.theme = next
+        track("select_content", { content_type: "화면 모드", content_id: next })
         try {
             localStorage.setItem("colorMode", next)
         } catch {

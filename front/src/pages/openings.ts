@@ -29,6 +29,16 @@ export const openings: PageConfig = {
         chip: 마감일상태(table.field("마감일", id), now),
     }),
     keyword: { label: "공고제목·담당업무", fields: ["공고제목", "담당업무"] },
+    analytics: (table, id) => ({
+        item_id: 공고번호(table, id),
+        item_name: table.text("공고제목")![id],
+        item_brand: table.text("업체명")![id],
+        item_category: table.field("업종", id),
+        item_category2: table.field("요원", id),
+        item_category3: table.field("역종", id),
+        item_category4: table.facetValues("주소", id)[0],
+        item_variant: table.field("급여", id),
+    }),
     fieldLink: (table, id, field) =>
         field === "업체명" && table.flag("업체목록", id) ? `/companies?업체명=${encodeURIComponent(table.text("업체명")![id])}` : undefined,
     link: (table, id) => ({

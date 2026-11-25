@@ -1,6 +1,8 @@
 // data/*.json을 읽어 색인 바이너리를 만들고, 해시가 붙은 파일로 내보낸다.
 // 같은 색인으로 각 화면을 HTML로 미리 그려 openings.html, companies.html, 404.html을 만든다(index.html은 채용공고와 같다).
 // 앱은 virtual:mma-data에서 파일 주소를 받는다. 각 HTML에는 첫 화면 데이터를 바로 받는 스크립트를 넣는다.
+// 검색엔진용으로 robots.txt, sitemap.xml을 만들고 각 화면에 canonical 주소를 적는다.
+// index.html의 애드센스 게시자 ID로 ads.txt를 만든다(없으면 광고 구매자 일부가 입찰하지 않는다).
 import { createHash } from "node:crypto"
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { extname, resolve } from "node:path"
@@ -11,6 +13,8 @@ import { normalizeName } from "../src/db/ngram.ts"
 import { encodeCompanies, encodeOpenings, isCompanyData } from "./encode.ts"
 import { type Pages, prerender } from "./prerender.ts"
 
+/** 운영 주소. canonical, sitemap.xml에 쓴다. */
+const SITE = "https://sangiyo.kr"
 const VIRTUAL = "virtual:mma-data"
 const RESOLVED = "\0" + VIRTUAL
 const BOOT = "<!--mma-boot-->"
@@ -20,6 +24,8 @@ const APP = "<!--mma-app-->"
 const ROUTES: Record<string, keyof Pages> = { "/": "openings", "/index.html": "openings", "/openings": "openings", "/companies": "companies" }
 /** 빌드 결과 HTML 파일 */
 const OUTPUT: Record<string, keyof Pages> = { "index.html": "openings", "openings.html": "openings", "companies.html": "companies", "404.html": "notFound" }
+/** 화면 → 검색엔진에 알릴 주소. /와 검색조건이 붙은 주소는 이 주소와 같은 화면으로 본다. */
+const CANONICAL: Partial<Record<keyof Pages, string>> = { openings: "/openings", companies: "/companies" }
 
 type Asset = { fileName: string, source: Uint8Array }
 type Files = { core: string, detail: string, coreRaw: string, detailRaw: string }
@@ -77,7 +83,7 @@ const build = (dir: string) => {
         urls[name] = files
         console.info(`[mma-data] ${name}: ${encoded[name].n}건, ${sizes.join(", ")}`)
     }
-    return { assets, urls, encoded }
+    return { assets, urls, encoded, time }
 }
 
 /** 앱 JS를 받는 동안 첫 화면 데이터도 함께 받는다. 주소에 검색조건이 있으면 적용할 때까지 본문을 가린다(app.css의 .pending). */
@@ -87,9 +93,26 @@ const bootScript = (urls: Record<DatasetName, Files>, base: string) => {
     return `<script>(function(w,d){try{var p=location.pathname,c=p.indexOf("/companies")===0;if(!c&&p!=="/"&&p.indexOf("/index.html")!==0&&p.indexOf("/openings")!==0)return;if(location.search)d.documentElement.classList.add("pending");if(!w.DecompressionStream)return;(w.__mma={})[c?"companies":"openings"]=fetch(c?${c}:${o}).then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()})}catch(e){}})(window,document)</script>`
 }
 
-const fill = (template: string, root: string) => {
+const fill = (template: string, page: keyof Pages, root: string) => {
     if (!template.includes(APP)) throw new Error(`index.html에 ${APP}이 없습니다.`)
-    return template.replace(APP, () => `<div id="root">${root}</div>`)
+    const path = CANONICAL[page]
+    const head = path ? `<link rel="canonical" href="${SITE}${path}">\n</head>` : "</head>"
+    return template.replace("</head>", () => head).replace(APP, () => `<div id="root">${root}</div>`)
+}
+
+const robots = () => `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`
+
+/** f08c47fec0942fa0은 Google의 TAG 인증 ID */
+const adsTxt = (template: string) => {
+    const publisher = /client=ca-(pub-\d+)/.exec(template)?.[1]
+    return publisher ? `google.com, ${publisher}, DIRECT, f08c47fec0942fa0\n` : undefined
+}
+
+/** lastmod는 데이터를 마지막으로 갱신한 시각 */
+const sitemap = (updatedAt: number) => {
+    const lastmod = new Date(updatedAt || Date.now()).toISOString().replace(/\.\d+Z$/, "Z")
+    const urls = Object.values(CANONICAL).map((path) => `  <url><loc>${SITE}${path}</loc><lastmod>${lastmod}</lastmod></url>`)
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`
 }
 
 export default function site(): Plugin {
@@ -137,7 +160,11 @@ export default function site(): Plugin {
                 return `<style>${String(css.source).trim()}</style>`
             })
             delete bundle["index.html"]
-            for (const [fileName, page] of Object.entries(OUTPUT)) this.emitFile({ type: "asset", fileName, source: fill(template, rendered()[page]) })
+            for (const [fileName, page] of Object.entries(OUTPUT)) this.emitFile({ type: "asset", fileName, source: fill(template, page, rendered()[page]) })
+            this.emitFile({ type: "asset", fileName: "robots.txt", source: robots() })
+            const ads = adsTxt(template)
+            if (ads) this.emitFile({ type: "asset", fileName: "ads.txt", source: ads })
+            this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap(get().time) })
         },
         configureServer(server) {
             server.middlewares.use((req, res, next) => {
@@ -154,7 +181,7 @@ export default function site(): Plugin {
                 server.transformIndexHtml(url, readFileSync(resolve(config.root, "index.html"), "utf-8"), req.originalUrl)
                     .then((template) => {
                         res.setHeader("Content-Type", "text/html; charset=utf-8")
-                        res.end(fill(template, rendered()[page]))
+                        res.end(fill(template, page, rendered()[page]))
                     })
                     .catch(next)
             })

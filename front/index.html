@@ -4,14 +4,18 @@
 <head>
   <meta charset="UTF-8" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7159955921423638" crossorigin="anonymous"></script>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-MQ2VXEL8QT"></script>
+  <!-- Google tag (gtag.js). 개발할 때(localhost, IP 주소, 파일)는 불러오지 않아 방문 통계에 섞이지 않는다. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-MQ2VXEL8QT');
+    if (location.hostname && !/^(localhost|[\d.]+|\[.*\])$|\.(localhost|local)$/.test(location.hostname)) {
+      var ga = document.createElement('script');
+      ga.async = true;
+      ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-MQ2VXEL8QT';
+      document.head.appendChild(ga);
+      gtag('js', new Date());
+      gtag('config', 'G-MQ2VXEL8QT');
+    }
   </script>
   <script>try{if(localStorage.getItem("colorMode")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
   <!--mma-boot-->

@@ -2,7 +2,8 @@ name: Update
 on:
     workflow_dispatch: 
     schedule:
-        - cron: 0 * * * *
+        # 정각은 GitHub 예약 실행이 몰려 늦어지거나 빠지는 일이 많아 17분에 돈다.
+        - cron: 17 * * * *
     push:
         branches:
             - master

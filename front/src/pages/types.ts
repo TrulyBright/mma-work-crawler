@@ -26,4 +26,6 @@ export type PageConfig = {
     /** 업체명 말고 더 찾을 글 */
     keyword?: { label: string, fields: readonly string[] }
     format?: (name: string, value: string) => string
+    /** 방문 통계에 넘길 상품(item) 정보 */
+    analytics: (table: Table, id: number) => Record<string, string | undefined>
 }

@@ -8,6 +8,7 @@ import { evaluate, shownFacets } from "../view/model.ts"
 import * as R from "../view/render.ts"
 import { PAGE, type State, conditions, emptyState, fromSearch, moreSelected, toSearch } from "../view/state.ts"
 import { element, elements, reconcile } from "./dom.ts"
+import { items, searchTracker, track } from "./track.ts"
 
 const readFavorites = (key: string): Record<string, true> => {
     try {
@@ -432,52 +433,76 @@ export class SearchView {
     // 이벤트
 
     private bind() {
-        const { el } = this
+        const { el, config, table } = this
+        // 방문 통계에는 사람이 직접 한 행동만 남긴다(주소에서 검색조건을 적용하는 것은 빼고).
+        const choose = (type: string, value: string) => track("select_content", { content_type: type, content_id: value, item_list_id: config.dataset })
+        const searched = {
+            name: searchTracker("업체명"),
+            keyword: searchTracker(config.keyword?.label ?? ""),
+        }
         el.addEventListener("change", (e) => {
             const t = e.target
             if (t instanceof HTMLInputElement && t.type === "checkbox") {
                 if (t.dataset.i !== undefined) {
                     const name = t.closest<HTMLElement>("[data-facet]")?.dataset.facet
                     if (!name) return
+                    const i = Number(t.dataset.i)
                     const next = new Set(this.state.selection.get(name))
-                    if (t.checked) next.add(Number(t.dataset.i))
-                    else next.delete(Number(t.dataset.i))
+                    if (t.checked) next.add(i)
+                    else next.delete(i)
+                    if (t.checked) choose(name, table.facet(name)?.values[i] ?? "")
                     this.setFacet(name, next)
                 } else if (t.dataset.favorites === "yes" || t.dataset.favorites === "no") {
+                    if (t.checked) choose("즐겨찾기", `${t.dataset.favorites === "yes" ? "즐겨찾는" : "즐겨찾지 않는"} ${config.noun}`)
                     this.setState({ favorites: { ...this.state.favorites, [t.dataset.favorites]: t.checked } }, true)
                 }
             } else if (t instanceof HTMLSelectElement) {
+                choose("정렬", t.value)
                 this.setState({ sort: t.value }, false)
             }
         })
         el.addEventListener("input", (e) => {
             const t = e.target
             if (!(t instanceof HTMLInputElement) || !t.dataset.text) return
-            this.setState(t.dataset.text === "name" ? { name: t.value } : { keyword: t.value }, true)
+            const field = t.dataset.text === "name" ? "name" : "keyword"
+            searched[field](t.value)
+            this.setState(field === "name" ? { name: t.value } : { keyword: t.value }, true)
         })
         el.addEventListener("click", (e) => {
+            // 병역일터 원문으로 나가는 링크
+            const original = (e.target as Element).closest<HTMLAnchorElement>('.detail a[target="_blank"]')
+            const detail = original?.closest<HTMLElement>("[data-detail]")
+            if (original && detail && el.contains(detail)) track("select_item", { item_list_id: config.dataset, items: items(table, config, Number(detail.dataset.detail)) })
             const button = (e.target as Element).closest<HTMLElement>("button[data-action]")
             if (!button || !el.contains(button)) return
             const id = () => Number(button.closest<HTMLElement>("[data-id]")?.dataset.id ?? button.closest<HTMLElement>("[data-detail]")?.dataset.detail)
             const facet = () => button.closest<HTMLElement>("[data-facet]")!.dataset.facet!
             switch (button.dataset.action) {
                 case "reset":
-                    return this.setState({ ...emptyState(this.config.schema), sort: this.state.sort }, true)
+                    choose("전체 초기화", "전체 초기화")
+                    return this.setState({ ...emptyState(config.schema), sort: this.state.sort }, true)
                 case "all":
-                    return this.setFacet(facet(), new Set(this.table.facet(facet())?.values.keys() ?? []))
+                    choose(facet(), "전체선택")
+                    return this.setFacet(facet(), new Set(table.facet(facet())?.values.keys() ?? []))
                 case "none":
+                    choose(facet(), "전체해제")
                     return this.setFacet(facet(), new Set())
                 case "more-filters":
                     this.moreOpen = !this.moreOpen
+                    choose("상세검색", this.moreOpen ? "상세검색" : "상세검색 접기")
                     return this.update()
                 case "less-filters":
                     this.moreOpen = false
+                    choose("상세검색", "상세검색 접기")
                     return this.update()
                 case "favorite":
                     return this.toggleFavorite(id())
                 case "toggle": {
                     const target = id()
-                    if (!this.open.delete(target)) this.open.add(target)
+                    if (!this.open.delete(target)) {
+                        this.open.add(target)
+                        track("view_item", { item_list_id: config.dataset, items: items(table, config, target) })
+                    }
                     return this.patchRows()
                 }
                 case "collapse":
@@ -485,6 +510,7 @@ export class SearchView {
                     return this.patchRows()
                 case "more":
                     this.limit += PAGE
+                    choose("더보기", String(this.limit))
                     return this.update()
             }
         })
@@ -493,8 +519,10 @@ export class SearchView {
     private toggleFavorite(id: number) {
         const key = this.config.favoriteKey(this.table, id)
         const next = { ...this.favorites }
-        if (next[key]) delete next[key]
-        else next[key] = true
+        const adding = !next[key]
+        if (adding) next[key] = true
+        else delete next[key]
+        track(adding ? "add_to_wishlist" : "remove_from_wishlist", { item_list_id: this.config.dataset, items: items(this.table, this.config, id) })
         this.favorites = next
         writeFavorites(this.config.favoritesStorage, next)
         // 즐겨찾기로 거르고 있을 때만 결과가 바뀐다.
