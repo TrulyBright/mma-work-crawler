@@ -8,4 +8,6 @@ declare module "virtual:mma-data" {
 
 interface Window {
     __mma?: Partial<Record<import("./db/schema").DatasetName, Promise<ArrayBuffer>>>
+    /** index.html의 GA4 태그. 개발 중에는 dataLayer에 쌓이기만 한다. */
+    gtag?: (...args: unknown[]) => void
 }

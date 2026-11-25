@@ -5,6 +5,7 @@ import { isPage, pages, type PagePath } from "../pages/index.ts"
 import * as R from "../view/render.ts"
 import { element } from "./dom.ts"
 import { SearchView } from "./search-view.ts"
+import { track } from "./track.ts"
 
 type Slot = { el: HTMLElement, view?: SearchView, started: boolean }
 
@@ -39,7 +40,9 @@ export const startRouter = () => {
                 if (here) slot.view.activate(location.search)
             })
             .catch((e: unknown) => {
-                slot.el.innerHTML = R.errorView(e instanceof Error ? e.message : String(e))
+                const message = e instanceof Error ? e.message : String(e)
+                slot.el.innerHTML = R.errorView(message)
+                track("exception", { description: `${config.dataset}: ${message}`, fatal: true })
             })
             .finally(reveal)
     }
@@ -75,11 +78,21 @@ export const startRouter = () => {
         } else if (!slot.started) start(path, slot)
     }
 
+    // 방문 통계의 페이지뷰는 화면이 바뀔 때만 남긴다. 검색조건 때문에 주소만 바뀌는 것은 세지 않는다.
+    // (GA 웹 스트림의 '브라우저 방문 기록 이벤트 기반 페이지 변경'은 꺼 둔다.)
+    let counted = location.pathname
+    const pageView = () => {
+        if (location.pathname === counted) return
+        counted = location.pathname
+        track("page_view", { page_location: location.href, page_title: document.title })
+    }
+
     const navigate = (url: string) => {
         if (url === location.pathname + location.search) return
         const samePath = new URL(url, location.href).pathname === location.pathname
         history.pushState(null, "", url)
         show()
+        pageView()
         if (!samePath) window.scrollTo(0, 0)
     }
 
@@ -91,6 +104,9 @@ export const startRouter = () => {
         e.preventDefault()
         navigate(a.pathname + a.search)
     })
-    addEventListener("popstate", show)
+    addEventListener("popstate", () => {
+        show()
+        pageView()
+    })
     show()
 }
