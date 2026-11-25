@@ -9,10 +9,11 @@ import { track } from "./track.ts"
 
 type Slot = { el: HTMLElement, view?: SearchView, started: boolean }
 
-/** 예전 주소와 .html 주소를 화면 주소로 */
+/** 예전 주소와 .html 주소, 끝에 /가 붙은 주소를 화면 주소로 (Azure는 /openings/에도 채용공고 HTML을 준다) */
 const canonical = (path: string) => {
     if (path === "/" || path === "/index.html") return "/openings"
     if (path.endsWith(".html") && isPage(path.slice(0, -5))) return path.slice(0, -5)
+    if (path.endsWith("/") && isPage(path.slice(0, -1))) return path.slice(0, -1)
     return path
 }
 
