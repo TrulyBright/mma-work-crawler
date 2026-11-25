@@ -68,9 +68,14 @@ const opening = (table: Table, config: PageConfig, id: number): ItemMeta => {
     }
 }
 
+/**
+ * 업체 페이지는 지금 사람을 뽑는 업체(채용유무가 모집중이거나 공고가 있는 곳, 약 460곳)만 만든다.
+ * 6,585곳을 다 만들면 파일이 7천 개를 넘어 Azure SWA 배포가 "Failure during content distribution"으로 실패했다.
+ */
 const company = (table: Table, id: number): ItemMeta | undefined => {
     const code = table.num("업체코드")?.[id]
     if (!code) return undefined
+    if (table.field("채용유무", id) === undefined && !table.flag("채용공고", id)) return undefined
     const f = (name: string) => table.field(name, id)
     return {
         path: `/companies/${code}/`,
@@ -79,7 +84,7 @@ const company = (table: Table, id: number): ItemMeta | undefined => {
     }
 }
 
-/** 페이지를 만들 레코드. 업체코드가 없는 업체는 원문 주소가 없어 건너뛴다. */
+/** 페이지를 만들 레코드. 업체코드가 없는 업체는 원문 주소가 없어 건너뛰고, 업체는 사람을 뽑는 곳만 만든다. */
 export const itemMeta = (table: Table, config: PageConfig, id: number): ItemMeta | undefined =>
     config.dataset === "openings" ? opening(table, config, id) : company(table, id)
 
