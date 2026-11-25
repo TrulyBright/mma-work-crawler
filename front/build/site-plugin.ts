@@ -2,6 +2,7 @@
 // 같은 색인으로 각 화면을 HTML로 미리 그려 openings.html, companies.html, 404.html을 만든다(index.html은 채용공고와 같다).
 // 앱은 virtual:mma-data에서 파일 주소를 받는다. 각 HTML에는 첫 화면 데이터를 바로 받는 스크립트를 넣는다.
 // 검색엔진용으로 robots.txt, sitemap.xml을 만들고 각 화면에 canonical 주소를 적는다.
+// index.html의 애드센스 게시자 ID로 ads.txt를 만든다(없으면 광고 구매자 일부가 입찰하지 않는다).
 import { createHash } from "node:crypto"
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { extname, resolve } from "node:path"
@@ -101,6 +102,12 @@ const fill = (template: string, page: keyof Pages, root: string) => {
 
 const robots = () => `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`
 
+/** f08c47fec0942fa0은 Google의 TAG 인증 ID */
+const adsTxt = (template: string) => {
+    const publisher = /client=ca-(pub-\d+)/.exec(template)?.[1]
+    return publisher ? `google.com, ${publisher}, DIRECT, f08c47fec0942fa0\n` : undefined
+}
+
 /** lastmod는 데이터를 마지막으로 갱신한 시각 */
 const sitemap = (updatedAt: number) => {
     const lastmod = new Date(updatedAt || Date.now()).toISOString().replace(/\.\d+Z$/, "Z")
@@ -155,6 +162,8 @@ export default function site(): Plugin {
             delete bundle["index.html"]
             for (const [fileName, page] of Object.entries(OUTPUT)) this.emitFile({ type: "asset", fileName, source: fill(template, page, rendered()[page]) })
             this.emitFile({ type: "asset", fileName: "robots.txt", source: robots() })
+            const ads = adsTxt(template)
+            if (ads) this.emitFile({ type: "asset", fileName: "ads.txt", source: ads })
             this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap(get().time) })
         },
         configureServer(server) {
