@@ -11,6 +11,11 @@ on:
         types: [opened, synchronize, reopened, closed]
         branches:
             - main
+# Deploy와 Update는 둘 다 같은 Azure SWA에 배포한다. 겹치면 Azure가 먼저 올린 배포를 취소하므로 하나씩 차례로 돈다.
+concurrency:
+    group: azure-swa-deploy
+    cancel-in-progress: false
+
 jobs:
     Deploy-to-the-Azure-SWA:
         runs-on: ubuntu-latest
