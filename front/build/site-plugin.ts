@@ -1,6 +1,7 @@
 // data/*.json을 읽어 색인 바이너리를 만들고, 해시가 붙은 파일로 내보낸다.
 // 같은 색인으로 각 화면을 HTML로 미리 그려 openings.html, companies.html, 404.html을 만든다(index.html은 채용공고와 같다).
 // 앱은 virtual:mma-data에서 파일 주소를 받는다. 각 HTML에는 첫 화면 데이터를 바로 받는 스크립트를 넣는다.
+// 공고·업체마다 정적 페이지(/openings/<공고번호>/, /companies/<업체코드>/)도 만든다.
 // 검색엔진용으로 robots.txt, sitemap.xml을 만들고 각 화면에 canonical 주소를 적는다.
 // index.html의 애드센스 게시자 ID로 ads.txt를 만든다(없으면 광고 구매자 일부가 입찰하지 않는다).
 import { createHash } from "node:crypto"
@@ -10,8 +11,10 @@ import { gzipSync, constants } from "node:zlib"
 import type { Plugin, ResolvedConfig } from "vite"
 import type { DatasetName } from "../src/db/schema.ts"
 import { normalizeName } from "../src/db/ngram.ts"
+import { esc } from "../src/view/html.ts"
 import { encodeCompanies, encodeOpenings, isCompanyData } from "./encode.ts"
-import { type Pages, prerender } from "./prerender.ts"
+import { type ItemMeta, jsonLdScript } from "./item-pages.ts"
+import { type Item, type Pages, prerender } from "./prerender.ts"
 
 /** 운영 주소. canonical, sitemap.xml에 쓴다. */
 const SITE = "https://sangiyo.kr"
@@ -22,6 +25,8 @@ const APP = "<!--mma-app-->"
 
 /** 주소 → 미리 그린 화면 (개발 서버와 preview에서 Azure SWA의 routes를 흉내 낸다) */
 const ROUTES: Record<string, keyof Pages> = { "/": "openings", "/index.html": "openings", "/openings": "openings", "/companies": "companies" }
+/** 공고·업체 페이지 주소 */
+const ITEM_PATH = /^\/(openings|companies)\/[^/.]+\/?$/
 /** 빌드 결과 HTML 파일 */
 const OUTPUT: Record<string, keyof Pages> = { "index.html": "openings", "openings.html": "openings", "companies.html": "companies", "404.html": "notFound" }
 /** 화면 → 검색엔진에 알릴 주소. /와 검색조건이 붙은 주소는 이 주소와 같은 화면으로 본다. */
@@ -89,16 +94,28 @@ const build = (dir: string) => {
 /** 앱 JS를 받는 동안 첫 화면 데이터도 함께 받는다. 주소에 검색조건이 있으면 적용할 때까지 본문을 가린다(app.css의 .pending). */
 const bootScript = (urls: Record<DatasetName, Files>, base: string) => {
     const o = JSON.stringify(base + urls.openings.core)
-    const c = JSON.stringify(base + urls.companies.core)
-    return `<script>(function(w,d){try{var p=location.pathname,c=p.indexOf("/companies")===0;if(!c&&p!=="/"&&p.indexOf("/index.html")!==0&&p.indexOf("/openings")!==0)return;if(location.search)d.documentElement.classList.add("pending");if(!w.DecompressionStream)return;(w.__mma={})[c?"companies":"openings"]=fetch(c?${c}:${o}).then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()})}catch(e){}})(window,document)</script>`
+    const co = JSON.stringify(base + urls.companies.core)
+    return `<script>(function(w,d){try{var c={"/":0,"/index.html":0,"/openings":0,"/openings/":0,"/openings.html":0,"/companies":1,"/companies/":1,"/companies.html":1}[location.pathname];if(c===undefined)return;if(location.search)d.documentElement.classList.add("pending");if(!w.DecompressionStream)return;(w.__mma={})[c?"companies":"openings"]=fetch(c?${co}:${o}).then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()})}catch(e){}})(window,document)</script>`
 }
 
-const fill = (template: string, page: keyof Pages, root: string) => {
+type Head = { canonical?: string, title?: string, description?: string, jsonLd?: Record<string, unknown> }
+
+const TITLE = /<title>[^<]*<\/title>/
+const DESCRIPTION = /<meta name="description" content="[^"]*"\s*\/?>/
+
+const fill = (template: string, head: Head, root: string) => {
     if (!template.includes(APP)) throw new Error(`index.html에 ${APP}이 없습니다.`)
-    const path = CANONICAL[page]
-    const head = path ? `<link rel="canonical" href="${SITE}${path}">\n</head>` : "</head>"
-    return template.replace("</head>", () => head).replace(APP, () => `<div id="root">${root}</div>`)
+    if (!TITLE.test(template) || !DESCRIPTION.test(template)) throw new Error("index.html에 title이나 description이 없습니다.")
+    let html = template
+    if (head.title) html = html.replace(TITLE, () => `<title>${esc(head.title!)}</title>`)
+    if (head.description) html = html.replace(DESCRIPTION, () => `<meta name="description" content="${esc(head.description!)}" />`)
+    const extra = (head.canonical ? `<link rel="canonical" href="${SITE}${head.canonical}">` : "") + (head.jsonLd ? jsonLdScript(head.jsonLd) : "")
+    if (extra) html = html.replace("</head>", () => `${extra}\n</head>`)
+    return html.replace(APP, () => `<div id="root">${root}</div>`)
 }
+
+const pageHead = (page: keyof Pages): Head => ({ canonical: CANONICAL[page] })
+const itemHead = (meta: ItemMeta): Head => ({ canonical: meta.path, title: meta.title, description: meta.description, jsonLd: meta.jsonLd })
 
 const robots = () => `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`
 
@@ -108,19 +125,25 @@ const adsTxt = (template: string) => {
     return publisher ? `google.com, ${publisher}, DIRECT, f08c47fec0942fa0\n` : undefined
 }
 
-/** lastmod는 데이터를 마지막으로 갱신한 시각 */
-const sitemap = (updatedAt: number) => {
+/** 목록 화면의 lastmod는 데이터를 마지막으로 갱신한 시각, 공고는 최종변동일. 업체는 바뀐 날을 몰라 적지 않는다. */
+const sitemap = (updatedAt: number, items: readonly Item[]) => {
     const lastmod = new Date(updatedAt || Date.now()).toISOString().replace(/\.\d+Z$/, "Z")
-    const urls = Object.values(CANONICAL).map((path) => `  <url><loc>${SITE}${path}</loc><lastmod>${lastmod}</lastmod></url>`)
+    const url = (path: string, date?: string) => `  <url><loc>${SITE}${path}</loc>${date ? `<lastmod>${date}</lastmod>` : ""}</url>`
+    const urls = [
+        ...Object.values(CANONICAL).map((path) => url(path, lastmod)),
+        ...items.map(({ meta }) => url(meta.path, meta.lastmod)),
+    ]
     return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`
 }
 
 export default function site(): Plugin {
     let config: ResolvedConfig
     let data: ReturnType<typeof build> | undefined
-    let html: Pages | undefined
+    let html: ReturnType<typeof prerender> | undefined
+    let byPath: Map<string, Item> | undefined
     const get = () => (data ??= build(process.env.MMA_DATA_DIR ? resolve(process.env.MMA_DATA_DIR) : resolve(config.root, "data")))
     const rendered = () => (html ??= prerender(get().encoded))
+    const item = (path: string) => (byPath ??= new Map(rendered().items.map((i) => [i.meta.path, i]))).get(path.endsWith("/") ? path : `${path}/`)
     return {
         name: "mma-site",
         // index.html이 번들에 들어간 뒤에 페이지를 만든다.
@@ -151,20 +174,24 @@ export default function site(): Plugin {
         generateBundle(_, bundle) {
             const index = bundle["index.html"]
             if (!index || index.type !== "asset") throw new Error("번들에 index.html이 없습니다.")
-            // CSS를 HTML에 넣어, HTML만 받으면 바로 그릴 수 있게 한다(gzip 3KB 남짓).
-            const template = String(index.source).replace(/<link\b[^>]*\brel="stylesheet"[^>]*>/g, (tag) => {
+            const linked = String(index.source)
+            // 목록 화면은 CSS를 HTML에 넣어, HTML만 받으면 바로 그릴 수 있게 한다(gzip 3KB 남짓).
+            // 공고·업체 페이지는 수천 개라 CSS 파일을 따로 두고 캐시를 같이 쓴다.
+            const inlined = linked.replace(/<link\b[^>]*\brel="stylesheet"[^>]*>/g, (tag) => {
                 const file = /\bhref="([^"]+)"/.exec(tag)?.[1].slice(config.base.length)
                 const css = file ? bundle[file] : undefined
-                if (!css || css.type !== "asset") return tag
-                delete bundle[file!]
-                return `<style>${String(css.source).trim()}</style>`
+                return css?.type === "asset" ? `<style>${String(css.source).trim()}</style>` : tag
             })
             delete bundle["index.html"]
-            for (const [fileName, page] of Object.entries(OUTPUT)) this.emitFile({ type: "asset", fileName, source: fill(template, page, rendered()[page]) })
+            const { pages, items } = rendered()
+            for (const [fileName, page] of Object.entries(OUTPUT)) this.emitFile({ type: "asset", fileName, source: fill(inlined, pageHead(page), pages[page]) })
+            for (const { meta, root } of items) this.emitFile({ type: "asset", fileName: `${meta.path.slice(1)}index.html`, source: fill(linked, itemHead(meta), root) })
             this.emitFile({ type: "asset", fileName: "robots.txt", source: robots() })
-            const ads = adsTxt(template)
+            const ads = adsTxt(linked)
             if (ads) this.emitFile({ type: "asset", fileName: "ads.txt", source: ads })
-            this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap(get().time) })
+            this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap(get().time, items) })
+            const count = (prefix: string) => items.filter((i) => i.meta.path.startsWith(prefix)).length
+            console.info(`[mma-site] 공고 페이지 ${count("/openings/")}개, 업체 페이지 ${count("/companies/")}개`)
         },
         configureServer(server) {
             server.middlewares.use((req, res, next) => {
@@ -177,11 +204,12 @@ export default function site(): Plugin {
                     return
                 }
                 const page = ROUTES[path]
-                if (!page) return next()
+                const found = !page && ITEM_PATH.test(path) ? item(path) : undefined
+                if (!page && !found) return next()
                 server.transformIndexHtml(url, readFileSync(resolve(config.root, "index.html"), "utf-8"), req.originalUrl)
                     .then((template) => {
                         res.setHeader("Content-Type", "text/html; charset=utf-8")
-                        res.end(fill(template, page, rendered()[page]))
+                        res.end(page ? fill(template, pageHead(page), rendered().pages[page]) : fill(template, itemHead(found!.meta), found!.root))
                     })
                     .catch(next)
             })
@@ -192,6 +220,10 @@ export default function site(): Plugin {
                 const [path, query = ""] = (req.url ?? "/").split(/\?(.*)/s)
                 if (path === "/openings" || path === "/companies") {
                     req.url = `${path}.html${query ? `?${query}` : ""}`
+                    return next()
+                }
+                if (ITEM_PATH.test(path)) {
+                    req.url = `${path.replace(/\/?$/, "/")}index.html`
                     return next()
                 }
                 if (path === "/" || extname(path) !== "") return next()
