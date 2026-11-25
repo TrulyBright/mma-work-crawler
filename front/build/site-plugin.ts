@@ -91,11 +91,13 @@ const build = (dir: string) => {
     return { assets, urls, encoded, time }
 }
 
-/** 앱 JS를 받는 동안 첫 화면 데이터도 함께 받는다. 주소에 검색조건이 있으면 적용할 때까지 본문을 가린다(app.css의 .pending). */
+/**
+ * 앱 JS를 받는 동안 첫 화면 데이터도 함께 받는다. 주소에 검색조건이 있으면 적용할 때까지 본문을 가린다(app.css의 .pending).
+ * 검색조건이 있으면(업체명 링크 등) 결과가 하나라 바로 펼쳐지는 경우가 많아 상세정보도 같이 받는다.
+ */
 const bootScript = (urls: Record<DatasetName, Files>, base: string) => {
-    const o = JSON.stringify(base + urls.openings.core)
-    const co = JSON.stringify(base + urls.companies.core)
-    return `<script>(function(w,d){try{var c={"/":0,"/index.html":0,"/openings":0,"/openings/":0,"/openings.html":0,"/companies":1,"/companies/":1,"/companies.html":1}[location.pathname];if(c===undefined)return;if(location.search)d.documentElement.classList.add("pending");if(!w.DecompressionStream)return;(w.__mma={})[c?"companies":"openings"]=fetch(c?${co}:${o}).then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()})}catch(e){}})(window,document)</script>`
+    const file = (name: DatasetName, part: "core" | "detail") => JSON.stringify(base + urls[name][part])
+    return `<script>(function(w,d){try{var c={"/":0,"/index.html":0,"/openings":0,"/openings/":0,"/openings.html":0,"/companies":1,"/companies/":1,"/companies.html":1}[location.pathname];if(c===undefined)return;var q=location.search;if(q)d.documentElement.classList.add("pending");if(!w.DecompressionStream)return;var n=c?"companies":"openings",m=w.__mma={},g=function(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()})};m[n]=g(c?${file("companies", "core")}:${file("openings", "core")});if(q)m[n+":detail"]=g(c?${file("companies", "detail")}:${file("openings", "detail")})}catch(e){}})(window,document)</script>`
 }
 
 type Head = { canonical?: string, title?: string, description?: string, jsonLd?: Record<string, unknown> }

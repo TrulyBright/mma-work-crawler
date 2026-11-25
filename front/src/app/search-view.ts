@@ -384,10 +384,17 @@ export class SearchView {
             toggle.lastElementChild!.classList.toggle("flip", open)
             row.open = open
         }
-        if (open && !row.detail) {
-            row.detail = element(this.table.detailLoaded ? R.detail(this.table, this.config, id) : R.detailLoading(id))
+        if (open && !row.detail) row.detail = element(this.table.detailLoaded ? R.detail(this.table, this.config, id) : R.detailLoading(id))
+        else if (!open) row.detail = undefined
+        // 불러오는 중 표시는 이 함수에서 만든 것만이 아니다. 링크로 들어와 처음부터 펼쳐 그린 행도 있다.
+        if (row.detail?.querySelector(".loading")) {
             if (!this.table.detailLoaded) this.waitDetail()
-        } else if (!open) row.detail = undefined
+            else {
+                const fresh = element(R.detail(this.table, this.config, id))
+                row.detail.replaceWith(fresh)
+                row.detail = fresh
+            }
+        }
     }
 
     private waitDetail() {
