@@ -1,6 +1,6 @@
-import { 병역지정업체 } from "../db/schema"
-import type { Table } from "../db/table"
-import type { PageConfig } from "../ui/SearchPage"
+import { 병역지정업체 } from "../db/schema.ts"
+import type { Table } from "../db/table.ts"
+import type { PageConfig } from "./types.ts"
 
 const 업체코드 = (table: Table, id: number) => table.num("업체코드")![id]
 

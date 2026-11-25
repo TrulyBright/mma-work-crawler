@@ -1,7 +1,7 @@
 import urls from "virtual:mma-data"
-import { Container } from "./container"
-import type { DatasetName } from "./schema"
-import { Table } from "./table"
+import { Container } from "./container.ts"
+import type { DatasetName } from "./schema.ts"
+import { Table } from "./table.ts"
 
 const canGunzip = typeof DecompressionStream !== "undefined"
 

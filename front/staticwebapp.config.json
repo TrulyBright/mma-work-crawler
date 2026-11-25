@@ -1,9 +1,7 @@
 {
-    "navigationFallback": {
-      "rewrite": "/index.html",
-      "exclude": ["/assets/*", "/data/*"]
-    },
     "routes": [
+      { "route": "/openings", "rewrite": "/openings.html" },
+      { "route": "/companies", "rewrite": "/companies.html" },
       {
         "route": "/assets/*",
         "headers": { "cache-control": "public, max-age=31536000, immutable" }
@@ -13,6 +11,9 @@
         "headers": { "cache-control": "public, max-age=31536000, immutable" }
       }
     ],
+    "responseOverrides": {
+      "404": { "rewrite": "/404.html" }
+    },
     "mimeTypes": {
       ".bin": "application/octet-stream",
       ".raw": "application/octet-stream"

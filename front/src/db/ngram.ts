@@ -1,7 +1,7 @@
 // 부분일치 검색용 바이그램 역색인.
 // 전송하면 이름 자체보다 커서(업체 기준 gzip 68KB 이상, 이름은 43KB) 첫 검색 때 브라우저에서 만든다.
 // 이름 끝에 \0을 붙여 모든 글자가 어떤 바이그램의 첫 글자가 되게 했다. 한 글자 검색은 키 범위 하나로 끝난다.
-import { set, wordCount } from "./bits"
+import { set, wordCount } from "./bits.ts"
 
 export const normalizeName = (s: string) => s.replace(/㈜/g, "(주)").replace(/\s+/g, "").toLowerCase()
 const REGEX_META = /[\\^$.*+?()[\]{}|]/

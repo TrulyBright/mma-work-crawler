@@ -1,0 +1,177 @@
+// data/*.json을 읽어 색인 바이너리를 만들고, 해시가 붙은 파일로 내보낸다.
+// 같은 색인으로 각 화면을 HTML로 미리 그려 openings.html, companies.html, 404.html을 만든다(index.html은 채용공고와 같다).
+// 앱은 virtual:mma-data에서 파일 주소를 받는다. 각 HTML에는 첫 화면 데이터를 바로 받는 스크립트를 넣는다.
+import { createHash } from "node:crypto"
+import { existsSync, readFileSync, statSync } from "node:fs"
+import { extname, resolve } from "node:path"
+import { gzipSync, constants } from "node:zlib"
+import type { Plugin, ResolvedConfig } from "vite"
+import type { DatasetName } from "../src/db/schema.ts"
+import { normalizeName } from "../src/db/ngram.ts"
+import { encodeCompanies, encodeOpenings, isCompanyData } from "./encode.ts"
+import { type Pages, prerender } from "./prerender.ts"
+
+const VIRTUAL = "virtual:mma-data"
+const RESOLVED = "\0" + VIRTUAL
+const BOOT = "<!--mma-boot-->"
+const APP = "<!--mma-app-->"
+
+/** 주소 → 미리 그린 화면 (개발 서버와 preview에서 Azure SWA의 routes를 흉내 낸다) */
+const ROUTES: Record<string, keyof Pages> = { "/": "openings", "/index.html": "openings", "/openings": "openings", "/companies": "companies" }
+/** 빌드 결과 HTML 파일 */
+const OUTPUT: Record<string, keyof Pages> = { "index.html": "openings", "openings.html": "openings", "companies.html": "companies", "404.html": "notFound" }
+
+type Asset = { fileName: string, source: Uint8Array }
+type Files = { core: string, detail: string, coreRaw: string, detailRaw: string }
+
+const sources: Record<DatasetName, string> = {
+    openings: "채용공고목록.json",
+    companies: "병역지정업체목록.json",
+}
+
+type Raw = Record<string, unknown>[]
+
+const readJson = (path: string): unknown => (existsSync(path) ? JSON.parse(readFileSync(path, "utf-8")) : undefined)
+
+const updatedAt = (dir: string) => {
+    const value = readJson(resolve(dir, "최종갱신.json"))
+    if (typeof value === "string" && !Number.isNaN(Date.parse(value))) return Date.parse(value)
+    if (typeof value === "number") return value < 1e12 ? value * 1000 : value
+    const mtimes = Object.values(sources).map((file) => resolve(dir, file)).filter(existsSync).map((p) => statSync(p).mtimeMs)
+    return mtimes.length ? Math.max(...mtimes) : 0
+}
+
+const build = (dir: string) => {
+    const assets: Asset[] = []
+    const urls = {} as Record<DatasetName, Files>
+    const time = updatedAt(dir)
+    const raws = {} as Record<DatasetName, Raw>
+    for (const [name, file] of Object.entries(sources) as [DatasetName, string][]) {
+        const raw = readJson(resolve(dir, file))
+        if (raw === undefined) console.warn(`[mma-data] ${file}이 없습니다. 빈 목록으로 빌드합니다.`)
+        if (raw !== undefined && !Array.isArray(raw)) throw new Error(`${file}의 형식이 올바르지 않습니다.`)
+        raws[name] = (raw ?? []) as Raw
+    }
+    if (!isCompanyData(raws.companies)) {
+        console.warn("[mma-data] 병역지정업체목록.json이 예전 형식입니다. 업체목록을 비워 둡니다.")
+        raws.companies = []
+    }
+    const names = (raw: Raw) => new Set(raw.map((r) => normalizeName(String(r["업체명"] ?? ""))))
+    const encoded = {
+        openings: encodeOpenings(raws.openings, time, names(raws.companies)),
+        companies: encodeCompanies(raws.companies, time, names(raws.openings)),
+    }
+    for (const name of Object.keys(sources) as DatasetName[]) {
+        const files = {} as Files
+        const sizes: string[] = []
+        for (const part of ["core", "detail"] as const) {
+            const bytes = encoded[name][part]
+            const hash = createHash("sha256").update(bytes).digest("hex").slice(0, 10)
+            const base = `data/${name}.${part}.${hash}`
+            const gz = gzipSync(bytes, { level: constants.Z_BEST_COMPRESSION, memLevel: 9 })
+            assets.push({ fileName: `${base}.bin`, source: gz }, { fileName: `${base}.raw`, source: bytes })
+            files[part] = `${base}.bin`
+            files[`${part}Raw`] = `${base}.raw`
+            sizes.push(`${part} ${(bytes.length / 1024).toFixed(0)}KB → gzip ${(gz.length / 1024).toFixed(0)}KB`)
+        }
+        urls[name] = files
+        console.info(`[mma-data] ${name}: ${encoded[name].n}건, ${sizes.join(", ")}`)
+    }
+    return { assets, urls, encoded }
+}
+
+/** 앱 JS를 받는 동안 첫 화면 데이터도 함께 받는다. 주소에 검색조건이 있으면 적용할 때까지 본문을 가린다(app.css의 .pending). */
+const bootScript = (urls: Record<DatasetName, Files>, base: string) => {
+    const o = JSON.stringify(base + urls.openings.core)
+    const c = JSON.stringify(base + urls.companies.core)
+    return `<script>(function(w,d){try{var p=location.pathname,c=p.indexOf("/companies")===0;if(!c&&p!=="/"&&p.indexOf("/index.html")!==0&&p.indexOf("/openings")!==0)return;if(location.search)d.documentElement.classList.add("pending");if(!w.DecompressionStream)return;(w.__mma={})[c?"companies":"openings"]=fetch(c?${c}:${o}).then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()})}catch(e){}})(window,document)</script>`
+}
+
+const fill = (template: string, root: string) => {
+    if (!template.includes(APP)) throw new Error(`index.html에 ${APP}이 없습니다.`)
+    return template.replace(APP, () => `<div id="root">${root}</div>`)
+}
+
+export default function site(): Plugin {
+    let config: ResolvedConfig
+    let data: ReturnType<typeof build> | undefined
+    let html: Pages | undefined
+    const get = () => (data ??= build(process.env.MMA_DATA_DIR ? resolve(process.env.MMA_DATA_DIR) : resolve(config.root, "data")))
+    const rendered = () => (html ??= prerender(get().encoded))
+    return {
+        name: "mma-site",
+        // index.html이 번들에 들어간 뒤에 페이지를 만든다.
+        enforce: "post",
+        config: () => ({ appType: "mpa" }),
+        configResolved(resolved) {
+            config = resolved
+        },
+        buildStart() {
+            if (config.command !== "build") return
+            for (const asset of get().assets) this.emitFile({ type: "asset", fileName: asset.fileName, source: asset.source })
+        },
+        resolveId(id) {
+            if (id === VIRTUAL) return RESOLVED
+        },
+        load(id) {
+            if (id !== RESOLVED) return
+            const urls = Object.fromEntries(Object.entries(get().urls).map(([name, files]) => [
+                name,
+                Object.fromEntries(Object.entries(files).map(([part, file]) => [part, config.base + file])),
+            ]))
+            return `export default ${JSON.stringify(urls)}`
+        },
+        transformIndexHtml: {
+            order: "post",
+            handler: (source) => source.replace(BOOT, () => bootScript(get().urls, config.base)),
+        },
+        generateBundle(_, bundle) {
+            const index = bundle["index.html"]
+            if (!index || index.type !== "asset") throw new Error("번들에 index.html이 없습니다.")
+            // CSS를 HTML에 넣어, HTML만 받으면 바로 그릴 수 있게 한다(gzip 3KB 남짓).
+            const template = String(index.source).replace(/<link\b[^>]*\brel="stylesheet"[^>]*>/g, (tag) => {
+                const file = /\bhref="([^"]+)"/.exec(tag)?.[1].slice(config.base.length)
+                const css = file ? bundle[file] : undefined
+                if (!css || css.type !== "asset") return tag
+                delete bundle[file!]
+                return `<style>${String(css.source).trim()}</style>`
+            })
+            delete bundle["index.html"]
+            for (const [fileName, page] of Object.entries(OUTPUT)) this.emitFile({ type: "asset", fileName, source: fill(template, rendered()[page]) })
+        },
+        configureServer(server) {
+            server.middlewares.use((req, res, next) => {
+                const url = req.url ?? "/"
+                const path = url.split("?")[0]
+                const asset = get().assets.find((a) => a.fileName === path.slice(config.base.length))
+                if (asset) {
+                    res.setHeader("Content-Type", "application/octet-stream")
+                    res.end(asset.source)
+                    return
+                }
+                const page = ROUTES[path]
+                if (!page) return next()
+                server.transformIndexHtml(url, readFileSync(resolve(config.root, "index.html"), "utf-8"), req.originalUrl)
+                    .then((template) => {
+                        res.setHeader("Content-Type", "text/html; charset=utf-8")
+                        res.end(fill(template, rendered()[page]))
+                    })
+                    .catch(next)
+            })
+        },
+        configurePreviewServer(server) {
+            const outDir = resolve(config.root, config.build.outDir)
+            server.middlewares.use((req, res, next) => {
+                const [path, query = ""] = (req.url ?? "/").split(/\?(.*)/s)
+                if (path === "/openings" || path === "/companies") {
+                    req.url = `${path}.html${query ? `?${query}` : ""}`
+                    return next()
+                }
+                if (path === "/" || extname(path) !== "") return next()
+                res.statusCode = 404
+                res.setHeader("Content-Type", "text/html; charset=utf-8")
+                res.end(readFileSync(resolve(outDir, "404.html")))
+            })
+        },
+    }
+}
