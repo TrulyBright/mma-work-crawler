@@ -111,7 +111,17 @@ export const moreRow = (noun: string, limit: number, total: number) =>
 
 export const footer = (updatedAt: string) => `<li class="footer">최종갱신: ${text(updatedAt)}</li>`
 
-export const formatUpdatedAt = (ms: number, timeZone?: string) => new Date(ms).toLocaleString("ko-KR", timeZone ? { timeZone } : undefined)
+/**
+ * 최종갱신 시각. 브라우저에서는 그 브라우저의 ko-KR 모양을 쓴다.
+ * 빌드에서는 한국 시간으로, 브라우저가 쓰는 "2026. 11. 26. 오전 12:07:51" 모양을 직접 만든다(Node의 ICU 버전에 따라 ko-KR 모양이 다르다).
+ */
+export const formatUpdatedAt = (ms: number, kst = false) => {
+    if (!kst) return new Date(ms).toLocaleString("ko-KR")
+    const options: Intl.DateTimeFormatOptions = { timeZone: "Asia/Seoul", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit", hourCycle: "h23" }
+    const part = Object.fromEntries(new Intl.DateTimeFormat("en-US", options).formatToParts(ms).map((p) => [p.type, p.value]))
+    const hour = Number(part.hour)
+    return `${part.year}. ${part.month}. ${part.day}. ${hour < 12 ? "오전" : "오후"} ${hour % 12 || 12}:${part.minute}:${part.second}`
+}
 
 /** 한 화면의 처음 모습. 빌드 때 이걸 HTML로 굳혀 두고, 브라우저는 여기서부터 바뀐 부분만 고친다. */
 export type PageModel = {
@@ -154,3 +164,11 @@ export const searchPage = (m: PageModel) => {
         + `${m.limit < m.total ? moreRow(noun, m.limit, m.total) : ""}${table.updatedAt > 0 ? footer(m.updatedAt) : ""}</ul>`
     return panel + list
 }
+
+/**
+ * 공고·업체 하나만 있는 페이지(/openings/<공고번호>/, /companies/<업체코드>/). 목록에서 펼친 모습과 같다.
+ * 즐겨찾기와 펼치기는 data-* 값으로 브라우저 스크립트가 붙인다(목록 데이터를 받지 않는다).
+ */
+export const itemPage = (table: Table, config: PageConfig, id: number, now: Date, updatedAt: string) =>
+    `<div data-item="${config.dataset}" data-key="${esc(config.favoriteKey(table, id))}" data-storage="${esc(config.favoritesStorage)}" data-updated="${table.updatedAt}" data-analytics="${esc(JSON.stringify(config.analytics(table, id)))}">`
+    + `<ul class="list results">${row(table, config, id, true, false, now)}${detail(table, config, id)}${table.updatedAt > 0 ? footer(updatedAt) : ""}</ul></div>`
