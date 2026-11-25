@@ -97,6 +97,15 @@ export const startRouter = () => {
         if (!samePath) window.scrollTo(0, 0)
     }
 
+    // 다른 화면으로 가는 링크에 마우스를 올리거나 누르기 시작하면 그 화면 데이터를 미리 받는다.
+    const warm = (e: Event) => {
+        const a = e.target instanceof Element ? e.target.closest("a") : null
+        if (!a || a.origin !== location.origin || !isPage(a.pathname) || a.pathname === location.pathname) return
+        if (slots.get(a.pathname)?.view) return
+        load(pages[a.pathname].dataset).catch(() => {})
+    }
+    for (const type of ["pointerover", "pointerdown", "focusin"]) document.addEventListener(type, warm, { passive: true })
+
     // 새 탭 열기 등은 브라우저에 맡기고, 사이트 안 화면으로 가는 일반 클릭만 가로챈다.
     document.addEventListener("click", (e) => {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
