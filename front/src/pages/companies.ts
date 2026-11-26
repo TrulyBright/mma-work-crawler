@@ -1,4 +1,4 @@
-import { 병역지정업체 } from "../db/schema.ts"
+import { 병역지정업체, 현역잔여 } from "../db/schema.ts"
 import type { Table } from "../db/table.ts"
 import type { PageConfig } from "./types.ts"
 
@@ -56,6 +56,7 @@ export const companies: PageConfig = {
         팩스번호: "Fax",
         현역배정인원: "People",
         보충역배정인원: "People",
+        [현역잔여]: "GroupAdd",
     },
     detailRows: [
         ["업체명"],

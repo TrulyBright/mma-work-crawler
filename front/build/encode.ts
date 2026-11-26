@@ -2,7 +2,7 @@
 import { wordCount } from "../src/db/bits.ts"
 import { Kind, type Section, writeContainer } from "../src/db/container.ts"
 import { normalizeName } from "../src/db/ngram.ts"
-import { type Schema, 병역지정업체, 채용공고 } from "../src/db/schema.ts"
+import { type Schema, 병역지정업체, 채용공고, 현역잔여 } from "../src/db/schema.ts"
 
 type Raw = Record<string, unknown>
 type Record_ = Record<string, string | string[] | number | undefined>
@@ -152,6 +152,18 @@ export const encodeOpenings = (raw: Raw[], updatedAt: number, companyNames: Read
 
 const 요원순서 = ["산업기능요원", "전문연구요원", "승선근무예비역"]
 
+/**
+ * 현역배정인원 − 현역편입인원. 0보다 작으면(배정보다 많이 편입) 0으로 본다.
+ * 산업기능요원만 센다. 전문연구요원의 현역배정인원(241, 583 등)과 보충역배정인원(605, 999, 9999 등)은 실제 인원이 아니다.
+ * 산업기능요원도 900 이상이면 그런 값으로 본다(2026년 11월 현재 가장 큰 값은 14).
+ */
+const 현역잔여인원 = (r: Record_) => {
+    const 배정 = r["현역배정인원"]
+    const 편입 = r["현역편입인원"]
+    if (str(r, "요원") !== "산업기능요원" || typeof 배정 !== "number" || typeof 편입 !== "number" || 배정 >= 900) return 0
+    return Math.max(0, 배정 - 편입)
+}
+
 /** 2024년까지 쓰던 공공데이터 API 형식이면 false. 다음 크롤링 때 새 형식으로 바뀐다. */
 export const isCompanyData = (raw: Raw[]) => raw.length === 0 || "요원" in raw[0]
 
@@ -163,9 +175,17 @@ export const encodeCompanies = (raw: Raw[], updatedAt: number, openingNames: Rea
         || byCodeUnit(str(a, "업체코드") ?? "", str(b, "업체코드") ?? ""))
     const s = 병역지정업체
     const b = new Builder(records.length)
-    facets(b, s, records, { 주소: (r) => region(str(r, "주소")) }, {
+    facets(b, s, records, {
+        주소: (r) => region(str(r, "주소")),
+        // 자리가 없는 업체는 값이 없는 것으로 둔다. 그래서 전체선택하면 자리가 남은 업체만 남는다.
+        [현역잔여]: (r) => {
+            const n = 현역잔여인원(r)
+            return n > 0 ? `${n}명` : undefined
+        },
+    }, {
         요원: (x, y) => 요원순서.indexOf(x) - 요원순서.indexOf(y),
         선정년도: (x, y) => byCodeUnit(y, x),
+        [현역잔여]: (x, y) => parseInt(x) - parseInt(y),
     })
     for (const name of s.coreText) b.text(name, records.map((r) => str(r, name)), "core")
     b.num("업체코드", records.map((r) => Number(str(r, "업체코드") ?? 0)), "core")
@@ -174,5 +194,6 @@ export const encodeCompanies = (raw: Raw[], updatedAt: number, openingNames: Rea
     b.flags("채용공고", records.map((r) => openingNames.has(normalizeName(str(r, "업체명") ?? ""))))
     b.sort("최신순", permutation(records.length, (i) => -Number(str(records[i], "선정년도") ?? 0)))
     b.sort("복무인원순", permutation(records.length, (i) => -(((records[i]["현역복무인원"] as number) ?? 0) + ((records[i]["보충역복무인원"] as number) ?? 0))))
+    b.sort(`${현역잔여}순`, permutation(records.length, (i) => -현역잔여인원(records[i])))
     return b.encode(updatedAt)
 }

@@ -516,6 +516,8 @@ main {
 
 .sort select {
     appearance: none;
+    /* 가장 긴 정렬 이름이 아니라 고른 정렬 이름만큼만 넓힌다. */
+    field-sizing: content;
     padding: 0 22px 0 4px;
     border: 0;
     border-radius: 4px;
